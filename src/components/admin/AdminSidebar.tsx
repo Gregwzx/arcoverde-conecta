@@ -14,6 +14,7 @@ import {
   X,
   ExternalLink,
   ShieldCheck,
+  Building,
 } from 'lucide-react';
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
@@ -49,11 +50,11 @@ export default function AdminSidebar() {
 
   return (
     <>
-      {/* Mobile toggle */}
+      {/* Mobile toggle button */}
       <button
         className="fixed top-3 left-3 z-50 md:hidden btn btn-secondary p-2 shadow-md bg-white border border-slate-300"
         onClick={() => setMobileOpen(!mobileOpen)}
-        aria-label="Abrir menu"
+        aria-label="Abrir menu de navegação"
       >
         {mobileOpen ? <X size={20} /> : <Menu size={20} />}
       </button>
@@ -61,37 +62,50 @@ export default function AdminSidebar() {
       {/* Overlay mobile */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 bg-slate-900/60 z-30 md:hidden backdrop-blur-xs"
+          className="fixed inset-0 bg-slate-950/70 z-30 md:hidden backdrop-blur-xs"
           onClick={() => setMobileOpen(false)}
         />
       )}
 
       {/* Sidebar Principal */}
       <aside
-        className={`sidebar fixed md:sticky top-0 z-40 ${mobileOpen ? 'open translate-x-0' : ''}`}
+        className={`sidebar fixed md:sticky top-0 z-40 transition-transform ${mobileOpen ? 'open translate-x-0' : ''}`}
       >
-        {/* Cabeçalho Institucional */}
-        <div className="px-5 py-5 border-b border-slate-800">
+        {/* Cabeçalho Institucional da Sidebar */}
+        <div className="px-5 py-5 border-b border-slate-800/80">
           <Link href="/admin" className="flex items-center gap-3 group">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-600 text-white font-bold text-sm tracking-wide shadow-xs shrink-0">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white font-bold text-sm tracking-wide shadow-md shadow-blue-900/30 shrink-0 group-hover:bg-blue-500 transition-colors">
               AC
             </div>
             <div className="min-w-0">
-              <h1 className="text-sm font-semibold text-white tracking-tight truncate">
+              <h1 className="text-sm font-bold text-white tracking-tight truncate leading-tight">
                 Arcoverde Conecta
               </h1>
-              <p className="text-xs text-slate-400 -mt-0.5 flex items-center gap-1 truncate">
-                <ShieldCheck size={12} className="text-emerald-400 shrink-0" />
-                Gestão Municipal
+              <p className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1.5 truncate">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shrink-0" />
+                Gestão Municipal Integrada
               </p>
             </div>
           </Link>
         </div>
 
+        {/* Identificação de Acesso */}
+        <div className="px-5 py-3 bg-slate-900/50 border-b border-slate-800/60">
+          <div className="flex items-center gap-2">
+            <div className="h-7 w-7 rounded-lg bg-slate-800 flex items-center justify-center text-xs font-semibold text-slate-300 border border-slate-700">
+              SV
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-medium text-slate-200 truncate">Servidor Municipal</p>
+              <p className="text-[10px] text-slate-400 truncate">Prefeitura de Arcoverde</p>
+            </div>
+          </div>
+        </div>
+
         {/* Navegação de Módulos */}
-        <div className="px-3 pt-4 pb-2">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 px-3">
-            Módulos de Gestão
+        <div className="px-4 pt-4 pb-2">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400/90 px-2">
+            Módulos do Sistema
           </span>
         </div>
 
@@ -105,7 +119,7 @@ export default function AdminSidebar() {
                 className={`sidebar-link ${active ? 'active' : ''}`}
                 onClick={() => setMobileOpen(false)}
               >
-                <item.icon size={17} className={active ? 'text-white' : 'text-slate-400'} />
+                <item.icon size={18} className={active ? 'text-white' : 'text-slate-400 group-hover:text-slate-300'} />
                 <span className="truncate">{item.label}</span>
               </Link>
             );
@@ -113,7 +127,7 @@ export default function AdminSidebar() {
         </nav>
 
         {/* Rodapé da Sidebar */}
-        <div className="px-3 py-4 border-t border-slate-800 space-y-1">
+        <div className="px-3 py-4 border-t border-slate-800/80 space-y-1">
           <Link
             href="/"
             target="_blank"
@@ -136,3 +150,4 @@ export default function AdminSidebar() {
     </>
   );
 }
+

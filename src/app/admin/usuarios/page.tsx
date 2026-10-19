@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   Users, Plus, Search, Filter, Edit3, Trash2, Shield,
-  Building2, CheckCircle2, AlertCircle, Mail, UserCheck, ShieldAlert
+  Building2, CheckCircle2, AlertCircle, Mail, UserCheck, ShieldAlert,
+  Info, Check, KeyRound, Sparkles
 } from 'lucide-react';
 import { PageHeader, StatCard, Badge, EmptyState, ConfirmDialog } from '@/components/ui/Shared';
 import { Modal } from '@/components/ui/Modal';
@@ -13,15 +14,27 @@ import {
 import type { Profile, Setor, UserRole } from '@/types';
 
 const ROLE_LABELS: Record<UserRole, string> = {
-  admin: 'Administrador',
+  admin: 'Administrador Geral',
   gestor: 'Gestor Setorial',
-  servidor: 'Atendente / Servidor',
+  servidor: 'Atendente / Operacional',
 };
 
-const ROLE_COLORS: Record<UserRole, string> = {
-  admin: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-  gestor: 'bg-sky-50 text-sky-700 border-sky-200',
-  servidor: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+const ROLE_DESCRIPTIONS: Record<UserRole, string> = {
+  admin: 'Acesso total: gerencia configurações de pesos, setores, usuários e relatórios gerais.',
+  gestor: 'Coordenação: tria, despacha e fiscaliza ordens de serviço vinculadas ao seu setor.',
+  servidor: 'Execução: atualiza vistorias, relata andamento e registra conclusões de demandas.',
+};
+
+const ROLE_BADGE_STYLES: Record<UserRole, string> = {
+  admin: 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800',
+  gestor: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800',
+  servidor: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800',
+};
+
+const ROLE_AVATAR_STYLES: Record<UserRole, string> = {
+  admin: 'bg-indigo-100 text-indigo-700 border-indigo-300 dark:bg-indigo-900/50 dark:text-indigo-200',
+  gestor: 'bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-900/50 dark:text-blue-200',
+  servidor: 'bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-900/50 dark:text-emerald-200',
 };
 
 export default function UsuariosPage() {
@@ -97,7 +110,7 @@ export default function UsuariosPage() {
         role,
         setor_id: setorId || null,
       });
-      setMensagem({ tipo: 'sucesso', texto: 'Usuário cadastrado com sucesso!' });
+      setMensagem({ tipo: 'sucesso', texto: 'Servidor / Usuário cadastrado com sucesso!' });
       setModalNovo(false);
       await carregarDados();
     } catch (err) {
@@ -122,7 +135,7 @@ export default function UsuariosPage() {
         setor_id: setorId || null,
         ativo,
       });
-      setMensagem({ tipo: 'sucesso', texto: 'Usuário atualizado com sucesso!' });
+      setMensagem({ tipo: 'sucesso', texto: 'Permissões e cadastro atualizados!' });
       setModalEditar(false);
       await carregarDados();
     } catch (err) {
@@ -146,7 +159,7 @@ export default function UsuariosPage() {
   const handleExcluir = async (id: string) => {
     try {
       await excluirPerfil(id);
-      setMensagem({ tipo: 'sucesso', texto: 'Usuário excluído com sucesso.' });
+      setMensagem({ tipo: 'sucesso', texto: 'Acesso do usuário revogado e registro excluído com sucesso.' });
       setConfirmExcluir(null);
       await carregarDados();
     } catch (err) {
@@ -172,11 +185,11 @@ export default function UsuariosPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <PageHeader
-        title="Gestão de Usuários"
-        description="Controle de acesso, servidores municipais e permissões no Arcoverde Conecta"
+        title="Gestão de Usuários e Permissões"
+        description="Controle de acesso institucional dos servidores públicos da Prefeitura de Arcoverde"
         action={
           <button className="btn btn-primary" onClick={abrirModalNovo}>
-            <Plus size={16} /> Novo Usuário
+            <Plus size={16} /> Novo Servidor / Usuário
           </button>
         }
       />
@@ -185,8 +198,8 @@ export default function UsuariosPage() {
         <div
           className={`p-4 rounded-xl flex items-center gap-3 animate-fade-in ${
             mensagem.tipo === 'sucesso'
-              ? 'bg-green-50 text-green-800 border border-green-200'
-              : 'bg-red-50 text-red-800 border border-red-200'
+              ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+              : 'bg-rose-50 text-rose-800 border border-rose-200'
           }`}
         >
           {mensagem.tipo === 'sucesso' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
@@ -196,10 +209,19 @@ export default function UsuariosPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Total de Usuários" value={perfis.length} icon={Users} />
-        <StatCard title="Administradores" value={totalAdmins} icon={Shield} color="text-purple-600" />
+        <StatCard title="Total de Usuários" value={perfis.length} icon={Users} color="text-primary" />
+        <StatCard title="Administradores Gerais" value={totalAdmins} icon={Shield} color="text-indigo-600" />
         <StatCard title="Gestores Setoriais" value={totalGestores} icon={Building2} color="text-blue-600" />
-        <StatCard title="Atendentes / Servidores" value={totalServidores} icon={UserCheck} color="text-emerald-600" />
+        <StatCard title="Atendentes e Técnicos" value={totalServidores} icon={UserCheck} color="text-emerald-600" />
+      </div>
+
+      {/* Informative Guidance Card */}
+      <div className="p-4 rounded-xl border border-blue-200 bg-blue-50/70 dark:bg-blue-950/20 dark:border-blue-900/60 flex items-start gap-3">
+        <Info size={18} className="text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
+        <div className="text-xs text-blue-950 dark:text-blue-200 leading-relaxed">
+          <span className="font-semibold block mb-0.5">Hierarquia de Acesso Institucional</span>
+          Os perfis definem a alçada de cada servidor: administradores controlam parâmetros e regras; gestores coordenam demandas atribuídas às suas respectivas secretarias; atendentes e servidores operam ordens de serviço em campo.
+        </div>
       </div>
 
       {/* Filters and Search */}
@@ -209,22 +231,22 @@ export default function UsuariosPage() {
           <input
             type="text"
             className="input pl-10"
-            placeholder="Buscar por nome ou e-mail..."
+            placeholder="Buscar por nome do servidor ou e-mail..."
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
           />
         </div>
 
-        <div className="sm:w-56">
+        <div className="sm:w-64">
           <select
             className="input"
             value={filtroRole}
             onChange={(e) => setFiltroRole(e.target.value)}
           >
-            <option value="">Todos os papéis</option>
-            <option value="admin">Administradores</option>
-            <option value="gestor">Gestores Setoriais</option>
-            <option value="servidor">Atendentes / Servidores</option>
+            <option value="">Todos os níveis de acesso</option>
+            <option value="admin">Administrador Geral</option>
+            <option value="gestor">Gestor Setorial</option>
+            <option value="servidor">Atendente / Operacional</option>
           </select>
         </div>
       </div>
@@ -242,10 +264,10 @@ export default function UsuariosPage() {
             <EmptyState
               icon={Users}
               title="Nenhum usuário encontrado"
-              description="Cadastre um novo usuário ou altere os filtros de pesquisa."
+              description="Cadastre um novo usuário ou altere os termos da pesquisa."
               action={
                 <button className="btn btn-secondary mt-2" onClick={abrirModalNovo}>
-                  <Plus size={16} /> Cadastrar Usuário
+                  <Plus size={16} /> Cadastrar Servidor
                 </button>
               }
             />
@@ -257,8 +279,8 @@ export default function UsuariosPage() {
                 <tr>
                   <th>Servidor / Usuário</th>
                   <th>Nível de Acesso</th>
-                  <th>Secretaria / Setor</th>
-                  <th>Cadastrado em</th>
+                  <th>Secretaria / Setor Vinculado</th>
+                  <th>Data de Cadastro</th>
                   <th>Status</th>
                   <th className="text-right">Ações</th>
                 </tr>
@@ -266,68 +288,76 @@ export default function UsuariosPage() {
               <tbody>
                 {perfisFiltrados.map((perfil) => {
                   const setorVinculado = setores.find((s) => s.id === perfil.setor_id);
+                  const iniciais = perfil.nome
+                    .split(' ')
+                    .filter(Boolean)
+                    .slice(0, 2)
+                    .map((n) => n[0].toUpperCase())
+                    .join('');
 
                   return (
                     <tr key={perfil.id} className="hover:bg-surface-hover transition-colors">
                       <td>
                         <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-primary to-primary-light text-white font-bold flex items-center justify-center text-sm shadow-sm shrink-0">
-                            {perfil.nome.charAt(0).toUpperCase()}
+                          <div className={`h-10 w-10 rounded-xl font-bold flex items-center justify-center text-xs shrink-0 border shadow-xs ${ROLE_AVATAR_STYLES[perfil.role]}`}>
+                            {iniciais || perfil.nome.charAt(0).toUpperCase()}
                           </div>
                           <div>
-                            <div className="font-semibold text-foreground">{perfil.nome}</div>
-                            <div className="text-xs text-muted flex items-center gap-1">
-                              <Mail size={11} /> {perfil.email}
+                            <div className="font-semibold text-foreground text-sm">{perfil.nome}</div>
+                            <div className="text-xs text-muted flex items-center gap-1 mt-0.5">
+                              <Mail size={12} className="shrink-0" /> {perfil.email}
                             </div>
                           </div>
                         </div>
                       </td>
                       <td>
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${ROLE_COLORS[perfil.role]}`}>
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${ROLE_BADGE_STYLES[perfil.role]}`}>
                           <Shield size={12} /> {ROLE_LABELS[perfil.role]}
                         </span>
                       </td>
                       <td>
                         {setorVinculado ? (
-                          <div className="flex items-center gap-1.5 text-sm font-medium text-foreground">
-                            <Building2 size={14} className="text-muted" />
-                            {setorVinculado.nome}
+                          <div className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+                            <Building2 size={13} className="text-muted shrink-0" />
+                            <span>{setorVinculado.nome}</span>
                           </div>
                         ) : (
-                          <span className="text-xs text-muted italic">Geral / Não atribuído</span>
+                          <span className="text-xs text-muted italic">Acesso Institucional Amplo</span>
                         )}
                       </td>
-                      <td className="text-xs text-muted">
+                      <td className="text-xs text-muted tabular-nums">
                         {new Date(perfil.created_at).toLocaleDateString('pt-BR')}
                       </td>
                       <td>
                         <button
                           onClick={() => handleToggleAtivo(perfil)}
-                          title="Clique para alternar status"
-                          className="cursor-pointer"
+                          title="Clique para alternar status do usuário"
+                          className="cursor-pointer focus-ring rounded-full"
                         >
                           {perfil.ativo ? (
-                            <Badge text="Ativo" color="bg-green-100 text-green-800 border-green-200" />
+                            <Badge text="Ativo" color="bg-emerald-50 text-emerald-700 border-emerald-200" />
                           ) : (
-                            <Badge text="Inativo" color="bg-gray-100 text-gray-700 border-gray-200" />
+                            <Badge text="Inativo" color="bg-slate-100 text-slate-600 border-slate-200" />
                           )}
                         </button>
                       </td>
                       <td className="text-right">
                         <div className="flex items-center justify-end gap-1">
                           <button
-                            className="btn btn-secondary p-2"
+                            className="btn btn-secondary p-2 text-xs"
                             onClick={() => abrirModalEditar(perfil)}
                             title="Editar Usuário"
+                            aria-label={`Editar ${perfil.nome}`}
                           >
-                            <Edit3 size={15} />
+                            <Edit3 size={14} />
                           </button>
                           <button
-                            className="btn btn-secondary p-2 text-red-600 hover:bg-red-50 hover:border-red-200"
+                            className="btn btn-secondary p-2 text-xs text-rose-600 hover:bg-rose-50 hover:border-rose-200"
                             onClick={() => setConfirmExcluir(perfil.id)}
-                            title="Excluir Usuário"
+                            title="Revogar Acesso"
+                            aria-label={`Excluir ${perfil.nome}`}
                           >
-                            <Trash2 size={15} />
+                            <Trash2 size={14} />
                           </button>
                         </div>
                       </td>
@@ -344,7 +374,9 @@ export default function UsuariosPage() {
       <Modal open={modalNovo} onClose={() => setModalNovo(false)} title="Cadastrar Servidor / Usuário" size="md">
         <form onSubmit={handleSalvarNovo} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Nome Completo *</label>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-muted mb-1">
+              Nome Completo *
+            </label>
             <input
               type="text"
               className="input"
@@ -357,7 +389,9 @@ export default function UsuariosPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">E-mail Institucional *</label>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-muted mb-1">
+              E-mail Institucional *
+            </label>
             <input
               type="email"
               className="input"
@@ -366,36 +400,43 @@ export default function UsuariosPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
             />
+            <p className="text-xs text-muted mt-1">Utilize o e-mail oficial para login e notificações do sistema.</p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Papel / Nível de Acesso *</label>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-muted mb-1">
+              Nível de Acesso (Papel) *
+            </label>
             <select
               className="input"
               value={role}
               onChange={(e) => setRole(e.target.value as UserRole)}
               required
             >
-              <option value="servidor">Atendente / Servidor (Triagem e atendimento)</option>
-              <option value="gestor">Gestor Setorial (Coordenação da secretaria)</option>
-              <option value="admin">Administrador Geral (Acesso irrestrito)</option>
+              <option value="servidor">Atendente / Operacional — Atendimento e execução em campo</option>
+              <option value="gestor">Gestor Setorial — Coordenação e despacho da secretaria</option>
+              <option value="admin">Administrador Geral — Acesso irrestrito a configurações</option>
             </select>
+            <p className="text-xs text-muted mt-1">{ROLE_DESCRIPTIONS[role]}</p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Secretaria / Setor Vinculado</label>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-muted mb-1">
+              Secretaria / Setor Vinculado
+            </label>
             <select
               className="input"
               value={setorId}
               onChange={(e) => setSetorId(e.target.value)}
             >
-              <option value="">Nenhum (Acesso geral ou Ouvidoria)</option>
+              <option value="">Nenhum (Acesso geral / Ouvidoria Central)</option>
               {setores.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.nome}
                 </option>
               ))}
             </select>
+            <p className="text-xs text-muted mt-1">Obrigatório para gestores setoriais filtrarem suas demandas.</p>
           </div>
 
           <div className="flex justify-end gap-3 pt-4 border-t border-border">
@@ -403,7 +444,7 @@ export default function UsuariosPage() {
               Cancelar
             </button>
             <button type="submit" className="btn btn-primary" disabled={salvando || !nome.trim() || !email.trim()}>
-              {salvando ? 'Cadastrando...' : 'Cadastrar Usuário'}
+              {salvando ? 'Cadastrando...' : 'Cadastrar Servidor'}
             </button>
           </div>
         </form>
@@ -413,7 +454,9 @@ export default function UsuariosPage() {
       <Modal open={modalEditar} onClose={() => setModalEditar(false)} title="Editar Servidor" size="md">
         <form onSubmit={handleSalvarEdicao} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Nome Completo *</label>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-muted mb-1">
+              Nome Completo *
+            </label>
             <input
               type="text"
               className="input"
@@ -424,7 +467,9 @@ export default function UsuariosPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">E-mail Institucional *</label>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-muted mb-1">
+              E-mail Institucional *
+            </label>
             <input
               type="email"
               className="input"
@@ -435,27 +480,32 @@ export default function UsuariosPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Papel / Nível de Acesso *</label>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-muted mb-1">
+              Nível de Acesso (Papel) *
+            </label>
             <select
               className="input"
               value={role}
               onChange={(e) => setRole(e.target.value as UserRole)}
               required
             >
-              <option value="servidor">Atendente / Servidor</option>
+              <option value="servidor">Atendente / Operacional</option>
               <option value="gestor">Gestor Setorial</option>
               <option value="admin">Administrador Geral</option>
             </select>
+            <p className="text-xs text-muted mt-1">{ROLE_DESCRIPTIONS[role]}</p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Secretaria / Setor Vinculado</label>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-muted mb-1">
+              Secretaria / Setor Vinculado
+            </label>
             <select
               className="input"
               value={setorId}
               onChange={(e) => setSetorId(e.target.value)}
             >
-              <option value="">Nenhum (Acesso geral ou Ouvidoria)</option>
+              <option value="">Nenhum (Acesso geral / Ouvidoria Central)</option>
               {setores.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.nome}
@@ -464,16 +514,16 @@ export default function UsuariosPage() {
             </select>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 p-3 bg-slate-50 dark:bg-slate-900 rounded-lg border border-border">
             <input
               type="checkbox"
               id="usuarioAtivo"
               checked={ativo}
               onChange={(e) => setAtivo(e.target.checked)}
-              className="accent-primary h-4 w-4 rounded"
+              className="accent-primary h-4 w-4 rounded cursor-pointer"
             />
-            <label htmlFor="usuarioAtivo" className="text-sm font-medium cursor-pointer">
-              Conta de usuário ativa no sistema
+            <label htmlFor="usuarioAtivo" className="text-xs font-medium cursor-pointer text-foreground">
+              Conta ativa no Arcoverde Conecta (permite acesso ao painel administrativo)
             </label>
           </div>
 
@@ -493,8 +543,8 @@ export default function UsuariosPage() {
         open={!!confirmExcluir}
         onClose={() => setConfirmExcluir(null)}
         onConfirm={() => confirmExcluir && handleExcluir(confirmExcluir)}
-        title="Excluir Usuário"
-        message="Tem certeza de que deseja revogar o acesso e excluir este usuário? O histórico de atendimentos e despachos efetuados por ele será preservado."
+        title="Revogar Acesso do Usuário"
+        message="Tem certeza de que deseja revogar o acesso e desativar este usuário? O histórico de atendimentos e despachos efetuados por ele será integralmente preservado para auditoria."
       />
     </div>
   );

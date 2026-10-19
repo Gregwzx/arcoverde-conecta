@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   Building2, Plus, Search, Edit3, Trash2, CheckCircle2,
-  XCircle, Clock, Users, AlertCircle, ShieldAlert
+  XCircle, Clock, Users, AlertCircle, ShieldAlert, Sparkles
 } from 'lucide-react';
 import { PageHeader, StatCard, Badge, EmptyState, ConfirmDialog } from '@/components/ui/Shared';
 import { Modal } from '@/components/ui/Modal';
@@ -81,7 +81,7 @@ export default function SetoresPage() {
     setSalvando(true);
     try {
       await criarSetor(nome.trim(), descricao.trim() || undefined, responsavelId || null);
-      setMensagem({ tipo: 'sucesso', texto: 'Setor cadastrado com sucesso!' });
+      setMensagem({ tipo: 'sucesso', texto: 'Secretaria/Setor cadastrado com sucesso!' });
       setModalNovo(false);
       await carregarDados();
     } catch (err) {
@@ -179,182 +179,185 @@ export default function SetoresPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <PageHeader
-        title="Gestão de Setores"
-        description="Secretarias e órgãos municipais responsáveis pelo atendimento de demandas públicas de Arcoverde"
+        title="Secretarias e Órgãos Municipais"
+        description="Gestão das secretarias e departamentos responsáveis pela execução de serviços públicos em Arcoverde"
+        badge={`${setores.length} órgão(s)`}
         action={
-          <button className="btn btn-primary" onClick={abrirModalNovo}>
-            <Plus size={16} /> Novo Setor
-          </button>
+          <div className="flex items-center gap-2">
+            <button className="btn btn-primary btn-sm text-xs gap-1.5 shadow-sm" onClick={abrirModalNovo}>
+              <Plus size={14} /> Novo Setor
+            </button>
+          </div>
         }
       />
 
       {mensagem && (
         <div
-          className={`p-4 rounded-xl flex items-center gap-3 animate-fade-in ${
+          className={`p-3.5 rounded-xl flex items-center gap-2.5 animate-fade-in text-xs shadow-xs ${
             mensagem.tipo === 'sucesso'
-              ? 'bg-green-50 text-green-800 border border-green-200'
-              : 'bg-red-50 text-red-800 border border-red-200'
+              ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+              : 'bg-rose-50 text-rose-800 border border-rose-200'
           }`}
         >
-          {mensagem.tipo === 'sucesso' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
-          <span className="text-sm font-medium">{mensagem.texto}</span>
+          {mensagem.tipo === 'sucesso' ? <CheckCircle2 size={16} className="text-emerald-600 shrink-0" /> : <AlertCircle size={16} className="text-rose-600 shrink-0" />}
+          <span className="font-medium">{mensagem.texto}</span>
         </div>
       )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Total de Setores" value={setores.length} icon={Building2} />
-        <StatCard title="Setores Ativos" value={totalAtivos} icon={CheckCircle2} color="text-success" />
-        <StatCard title="Com Gestor Atribuído" value={totalComGestor} icon={Users} color="text-primary" />
-        <StatCard title="Demandas Vinculadas" value={demandas.filter((d) => d.setor_id).length} icon={Clock} color="text-orange-500" />
+        <StatCard title="Total de Órgãos" value={setores.length} icon={Building2} color="text-blue-600" subtitle="Cadastrados no sistema" />
+        <StatCard title="Órgãos em Operação" value={totalAtivos} icon={CheckCircle2} color="text-emerald-600" subtitle="Ativos para despacho" />
+        <StatCard title="Com Gestor Setorial" value={totalComGestor} icon={Users} color="text-sky-600" subtitle="Responsáveis atribuídos" />
+        <StatCard title="Demandas em Andamento" value={demandas.filter((d) => d.setor_id && d.status !== 'concluida').length} icon={Clock} color="text-amber-600" subtitle="Sob execução direta" />
       </div>
 
-      {/* Search and Filters */}
-      <div className="card">
-        <div className="relative">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-          <input
-            type="text"
-            className="input pl-10"
-            placeholder="Buscar secretaria ou setor por nome ou competências..."
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
+      {/* Busca */}
+      <div className="relative">
+        <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+        <input
+          type="text"
+          className="input pl-10 text-xs"
+          placeholder="Buscar secretaria ou setor por nome ou competências..."
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+        />
+      </div>
+
+      {/* Tabela de Setores */}
+      {loading ? (
+        <div className="space-y-2">
+          {Array(4).fill(0).map((_, i) => (
+            <div key={i} className="h-14 animate-shimmer rounded-xl bg-slate-100" />
+          ))}
+        </div>
+      ) : setoresFiltrados.length === 0 ? (
+        <div className="card text-center py-12">
+          <EmptyState
+            icon={Building2}
+            title="Nenhum setor localizado"
+            description="Cadastre uma nova secretaria municipal ou carregue os órgãos oficiais de Arcoverde."
+            action={
+              <div className="flex flex-wrap items-center justify-center gap-2 mt-2">
+                <button className="btn btn-secondary btn-sm text-xs" onClick={abrirModalNovo}>
+                  <Plus size={14} /> Cadastrar Secretaria
+                </button>
+                <button className="btn btn-primary btn-sm text-xs gap-1.5" onClick={handleCarregarSetoresPadrao} disabled={salvando}>
+                  <Sparkles size={14} /> Carregar Secretarias de Arcoverde
+                </button>
+              </div>
+            }
           />
         </div>
-      </div>
+      ) : (
+        <div className="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Órgão / Secretaria Municipal</th>
+                <th>Competências e Atuação</th>
+                <th>Gestor Responsável</th>
+                <th>Demandas em Aberto</th>
+                <th>Status</th>
+                <th className="text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {setoresFiltrados.map((setor) => {
+                const gestorNome = getResponsavelNome(setor.responsavel_id);
+                const pendentes = getDemandasCount(setor.id);
 
-      {/* Sectors Table */}
-      <div className="card p-0 overflow-hidden">
-        {loading ? (
-          <div className="p-8 space-y-3">
-            {Array(4).fill(0).map((_, i) => (
-              <div key={i} className="h-14 animate-shimmer rounded-lg" />
-            ))}
-          </div>
-        ) : setoresFiltrados.length === 0 ? (
-          <div className="p-8">
-            <EmptyState
-              icon={Building2}
-              title="Nenhum setor encontrado"
-              description="Cadastre uma nova secretaria municipal ou carregue os órgãos padrão de Arcoverde."
-              action={
-                <div className="flex flex-wrap items-center justify-center gap-2 mt-3">
-                  <button className="btn btn-secondary btn-sm text-xs" onClick={abrirModalNovo}>
-                    <Plus size={14} /> Cadastrar Setor
-                  </button>
-                  <button className="btn btn-primary btn-sm text-xs" onClick={handleCarregarSetoresPadrao} disabled={salvando}>
-                    <Building2 size={14} /> Carregar Secretarias de Arcoverde
-                  </button>
-                </div>
-              }
-            />
-          </div>
-        ) : (
-          <div className="table-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th>Órgão / Secretaria</th>
-                  <th>Competências / Atuação</th>
-                  <th>Gestor Responsável</th>
-                  <th>Demandas Pendentes</th>
-                  <th>Status</th>
-                  <th className="text-right">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {setoresFiltrados.map((setor) => {
-                  const gestorNome = getResponsavelNome(setor.responsavel_id);
-                  const pendentes = getDemandasCount(setor.id);
-
-                  return (
-                    <tr key={setor.id} className="hover:bg-surface-hover transition-colors">
-                      <td className="font-semibold text-foreground">
-                        <div className="flex items-center gap-3">
-                          <div className="h-9 w-9 rounded-lg bg-primary-100 text-primary flex items-center justify-center font-bold text-xs shrink-0">
-                            <Building2 size={16} />
-                          </div>
-                          <div>
-                            <div className="font-semibold">{setor.nome}</div>
-                            <div className="text-xs text-muted">ID: {setor.id.slice(0, 8)}...</div>
-                          </div>
+                return (
+                  <tr key={setor.id} className="hover:bg-slate-50/80 text-xs">
+                    <td>
+                      <div className="flex items-center gap-3">
+                        <div className="h-9 w-9 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-bold text-xs shrink-0 border border-blue-100">
+                          <Building2 size={16} />
                         </div>
-                      </td>
-                      <td className="text-sm text-muted max-w-xs truncate">
-                        {setor.descricao || 'Sem descrição cadastrada'}
-                      </td>
-                      <td>
-                        {gestorNome ? (
-                          <div className="flex items-center gap-2">
-                            <div className="h-7 w-7 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center text-xs font-bold">
-                              {gestorNome.charAt(0)}
-                            </div>
-                            <span className="text-sm font-medium">{gestorNome}</span>
+                        <div>
+                          <div className="font-semibold text-slate-900">{setor.nome}</div>
+                          <div className="text-[11px] text-slate-400 font-mono">ID: {setor.id.slice(0, 8)}...</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="text-slate-600 max-w-xs truncate">
+                      {setor.descricao || 'Sem descrição cadastrada'}
+                    </td>
+                    <td>
+                      {gestorNome ? (
+                        <div className="flex items-center gap-2">
+                          <div className="h-6 w-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] font-bold">
+                            {gestorNome.charAt(0)}
                           </div>
-                        ) : (
-                          <span className="text-xs text-muted italic">Não definido</span>
-                        )}
-                      </td>
-                      <td>
-                        {pendentes > 0 ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-800">
-                            <Clock size={12} /> {pendentes} em aberto
+                          <span className="font-medium text-slate-800">{gestorNome}</span>
+                        </div>
+                      ) : (
+                        <span className="text-slate-400 italic">Não atribuído</span>
+                      )}
+                    </td>
+                    <td>
+                      {pendentes > 0 ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                          <Clock size={11} /> {pendentes} em aberto
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                          <CheckCircle2 size={11} /> Em dia
+                        </span>
+                      )}
+                    </td>
+                    <td>
+                      <button
+                        onClick={() => handleToggleAtivo(setor)}
+                        title="Clique para alternar status operacional"
+                        className="cursor-pointer"
+                      >
+                        {setor.ativo ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            Ativo
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
-                            <CheckCircle2 size={12} /> Em dia
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                            Inativo
                           </span>
                         )}
-                      </td>
-                      <td>
+                      </button>
+                    </td>
+                    <td className="text-right">
+                      <div className="flex items-center justify-end gap-1">
                         <button
-                          onClick={() => handleToggleAtivo(setor)}
-                          title="Clique para alternar status"
-                          className="cursor-pointer"
+                          className="btn btn-ghost btn-sm p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100"
+                          onClick={() => abrirModalEditar(setor)}
+                          title="Editar Setor"
                         >
-                          {setor.ativo ? (
-                            <Badge text="Ativo" color="bg-green-100 text-green-800 border-green-200" />
-                          ) : (
-                            <Badge text="Inativo" color="bg-gray-100 text-gray-700 border-gray-200" />
-                          )}
+                          <Edit3 size={15} />
                         </button>
-                      </td>
-                      <td className="text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <button
-                            className="btn btn-secondary p-2"
-                            onClick={() => abrirModalEditar(setor)}
-                            title="Editar Setor"
-                          >
-                            <Edit3 size={15} />
-                          </button>
-                          <button
-                            className="btn btn-secondary p-2 text-red-600 hover:bg-red-50 hover:border-red-200"
-                            onClick={() => setConfirmExcluir(setor.id)}
-                            title="Excluir Setor"
-                          >
-                            <Trash2 size={15} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+                        <button
+                          className="btn btn-ghost btn-sm p-1.5 text-slate-400 hover:text-rose-700 hover:bg-rose-50"
+                          onClick={() => setConfirmExcluir(setor.id)}
+                          title="Excluir Setor"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* MODAL: Novo Setor */}
-      <Modal open={modalNovo} onClose={() => setModalNovo(false)} title="Cadastrar Novo Setor" size="md">
-        <form onSubmit={handleSalvarNovo} className="space-y-4">
+      <Modal open={modalNovo} onClose={() => setModalNovo(false)} title="Cadastrar Nova Secretaria Municipal" size="md">
+        <form onSubmit={handleSalvarNovo} className="space-y-4 text-xs">
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Nome do Setor / Secretaria *</label>
+            <label className="block font-semibold text-slate-700 mb-1">Nome do Setor / Secretaria *</label>
             <input
               type="text"
-              className="input"
-              placeholder="Ex.: Secretaria de Saúde ou Defesa Civil"
+              className="input text-xs"
+              placeholder="Ex.: Secretaria de Serviços Públicos e Obras"
               value={nome}
               onChange={(e) => setNome(e.target.value)}
               required
@@ -363,20 +366,20 @@ export default function SetoresPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Descrição / Competências</label>
+            <label className="block font-semibold text-slate-700 mb-1">Descrição e Competências</label>
             <textarea
-              className="input"
+              className="input text-xs"
               rows={3}
-              placeholder="Descreva as atribuições principais desta secretaria no atendimento às demandas..."
+              placeholder="Descreva as atribuições principais desta secretaria no atendimento às demandas de Arcoverde..."
               value={descricao}
               onChange={(e) => setDescricao(e.target.value)}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Gestor Responsável</label>
+            <label className="block font-semibold text-slate-700 mb-1">Gestor Responsável</label>
             <select
-              className="input"
+              className="input text-xs"
               value={responsavelId}
               onChange={(e) => setResponsavelId(e.target.value)}
             >
@@ -389,25 +392,25 @@ export default function SetoresPage() {
             </select>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-border">
-            <button type="button" className="btn btn-secondary" onClick={() => setModalNovo(false)}>
+          <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-100">
+            <button type="button" className="btn btn-secondary text-xs" onClick={() => setModalNovo(false)}>
               Cancelar
             </button>
-            <button type="submit" className="btn btn-primary" disabled={salvando || !nome.trim()}>
-              {salvando ? 'Salvando...' : 'Cadastrar Setor'}
+            <button type="submit" className="btn btn-primary text-xs font-medium" disabled={salvando || !nome.trim()}>
+              {salvando ? 'Gravando...' : 'Cadastrar Secretaria'}
             </button>
           </div>
         </form>
       </Modal>
 
       {/* MODAL: Editar Setor */}
-      <Modal open={modalEditar} onClose={() => setModalEditar(false)} title="Editar Setor" size="md">
-        <form onSubmit={handleSalvarEdicao} className="space-y-4">
+      <Modal open={modalEditar} onClose={() => setModalEditar(false)} title="Editar Secretaria Municipal" size="md">
+        <form onSubmit={handleSalvarEdicao} className="space-y-4 text-xs">
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Nome do Setor / Secretaria *</label>
+            <label className="block font-semibold text-slate-700 mb-1">Nome do Setor / Secretaria *</label>
             <input
               type="text"
-              className="input"
+              className="input text-xs"
               value={nome}
               onChange={(e) => setNome(e.target.value)}
               required
@@ -415,9 +418,9 @@ export default function SetoresPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Descrição / Competências</label>
+            <label className="block font-semibold text-slate-700 mb-1">Descrição e Competências</label>
             <textarea
-              className="input"
+              className="input text-xs"
               rows={3}
               value={descricao}
               onChange={(e) => setDescricao(e.target.value)}
@@ -425,9 +428,9 @@ export default function SetoresPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Gestor Responsável</label>
+            <label className="block font-semibold text-slate-700 mb-1">Gestor Responsável</label>
             <select
-              className="input"
+              className="input text-xs"
               value={responsavelId}
               onChange={(e) => setResponsavelId(e.target.value)}
             >
@@ -440,24 +443,24 @@ export default function SetoresPage() {
             </select>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 pt-1">
             <input
               type="checkbox"
               id="setorAtivo"
               checked={ativo}
               onChange={(e) => setAtivo(e.target.checked)}
-              className="accent-primary h-4 w-4 rounded"
+              className="accent-blue-600 h-4 w-4 rounded"
             />
-            <label htmlFor="setorAtivo" className="text-sm font-medium cursor-pointer">
-              Setor ativo no sistema
+            <label htmlFor="setorAtivo" className="text-xs font-medium text-slate-700 cursor-pointer">
+              Secretaria ativa para recebimento de despachos
             </label>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-border">
-            <button type="button" className="btn btn-secondary" onClick={() => setModalEditar(false)}>
+          <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-100">
+            <button type="button" className="btn btn-secondary text-xs" onClick={() => setModalEditar(false)}>
               Cancelar
             </button>
-            <button type="submit" className="btn btn-primary" disabled={salvando || !nome.trim()}>
+            <button type="submit" className="btn btn-primary text-xs font-medium" disabled={salvando || !nome.trim()}>
               {salvando ? 'Salvando...' : 'Salvar Alterações'}
             </button>
           </div>
@@ -470,7 +473,9 @@ export default function SetoresPage() {
         onClose={() => setConfirmExcluir(null)}
         onConfirm={() => confirmExcluir && handleExcluir(confirmExcluir)}
         title="Excluir Setor"
-        message="Tem certeza de que deseja remover este setor? Demandas associadas a ele não serão apagadas, mas perderão a vinculação com a secretaria."
+        message="Tem certeza de que deseja remover esta secretaria? As demandas já registradas continuarão no sistema, mas perderão a vinculação direta com este órgão."
+        confirmLabel="Sim, Excluir"
+        variant="danger"
       />
     </div>
   );
