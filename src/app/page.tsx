@@ -51,7 +51,7 @@ function MapaOcorrencias({
 
   if (!MapContainer || !TileLayer || !MarkerComp || !PopupComp) {
     return (
-      <div className="h-[460px] bg-slate-100 rounded-xl flex flex-col items-center justify-center text-slate-500 gap-3 border border-slate-200">
+      <div className="h-[320px] sm:h-[460px] bg-slate-100 rounded-xl flex flex-col items-center justify-center text-slate-500 gap-3 border border-slate-200 p-4 text-center">
         <div className="h-9 w-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
           <MapPin size={20} className="animate-bounce" />
         </div>
@@ -61,11 +61,11 @@ function MapaOcorrencias({
   }
 
   return (
-    <div className="border border-slate-200 rounded-xl overflow-hidden shadow-xs bg-white">
+    <div className="border border-slate-200 rounded-xl overflow-hidden shadow-xs bg-white h-[320px] sm:h-[460px]">
       <MapContainer
         center={[-8.4182, -37.0533]}
         zoom={14}
-        style={{ height: '460px', width: '100%' }}
+        style={{ height: '100%', width: '100%' }}
         scrollWheelZoom={false}
       >
         <TileLayer
@@ -193,26 +193,26 @@ export default function HomePage() {
 
       {/* 2. Header Institucional */}
       <header className="bg-white border-b border-slate-200/90 sticky top-0 z-30 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <Link href="/" className="flex items-center gap-3 group">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white font-bold text-base tracking-wide shadow-md shadow-blue-600/20 group-hover:bg-blue-700 transition-colors shrink-0">
+            <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group min-w-0">
+              <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-blue-600 text-white font-bold text-sm sm:text-base tracking-wide shadow-md shadow-blue-600/20 group-hover:bg-blue-700 transition-colors shrink-0">
                 AC
               </div>
-              <div>
-                <h1 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight leading-tight">
+              <div className="min-w-0">
+                <h1 className="text-sm sm:text-lg font-bold text-slate-900 tracking-tight leading-tight truncate">
                   Arcoverde Conecta
                 </h1>
-                <p className="text-[11px] text-slate-500 font-medium leading-none">
+                <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium leading-none truncate">
                   Portal Municipal de Serviços Urbanos
                 </p>
               </div>
             </Link>
 
-            <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
               <button
                 onClick={() => setSecaoAtiva('protocolo')}
-                className="hidden sm:inline-flex items-center gap-1.5 text-xs text-slate-700 hover:text-blue-700 font-medium px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+                className="hidden md:inline-flex items-center gap-1.5 text-xs text-slate-700 hover:text-blue-700 font-medium px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-colors"
               >
                 <Search size={14} className="text-slate-400" />
                 <span>Consultar Protocolo</span>
@@ -220,18 +220,18 @@ export default function HomePage() {
 
               <button
                 onClick={() => setSecaoAtiva('registrar')}
-                className="btn btn-primary btn-sm text-xs gap-1.5 font-medium shadow-sm"
+                className="btn btn-primary btn-sm text-xs gap-1 sm:gap-1.5 font-medium shadow-sm px-2.5 sm:px-3"
               >
                 <PlusCircle size={14} />
-                <span>Registrar Demanda</span>
+                <span><span className="hidden xs:inline">Registrar </span>Demanda</span>
               </button>
 
               <Link
                 href="/login"
-                className="btn btn-secondary btn-sm text-xs text-slate-700 border-slate-300 hover:border-slate-400 gap-1.5"
+                className="btn btn-secondary btn-sm text-xs text-slate-700 border-slate-300 hover:border-slate-400 gap-1 sm:gap-1.5 px-2.5 sm:px-3"
               >
                 <Shield size={14} className="text-blue-600" />
-                <span className="hidden md:inline">Acesso</span> Servidor
+                <span className="hidden sm:inline">Acesso </span>Servidor
               </Link>
             </div>
           </div>
@@ -239,24 +239,24 @@ export default function HomePage() {
       </header>
 
       {/* 3. Hero Institucional Contemporâneo */}
-      <section className="bg-slate-900 text-white py-10 sm:py-14 px-4 border-b border-slate-800 relative overflow-hidden">
+      <section className="bg-slate-900 text-white py-8 sm:py-14 px-4 border-b border-slate-800 relative overflow-hidden">
         <div className="max-w-7xl mx-auto text-center relative z-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/90 text-slate-300 text-xs mb-4 border border-slate-700/80">
-            <Building2 size={13} className="text-blue-400" />
-            <span>Sistema Municipal de Triagem e Zeladoria Urbana</span>
+            <Building2 size={13} className="text-blue-400 shrink-0" />
+            <span className="truncate">Sistema Municipal de Triagem e Zeladoria Urbana</span>
           </div>
 
-          <h2 className="text-2xl sm:text-4xl font-bold tracking-tight text-white mb-3 max-w-3xl mx-auto leading-tight">
+          <h2 className="text-xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-white mb-3 max-w-3xl mx-auto leading-tight">
             Cuidando da nossa cidade com mais agilidade e transparência
           </h2>
-          <p className="text-sm sm:text-base text-slate-300 max-w-2xl mx-auto mb-8 font-normal leading-relaxed">
+          <p className="text-xs sm:text-base text-slate-300 max-w-2xl mx-auto mb-6 sm:mb-8 font-normal leading-relaxed">
             Acompanhe em tempo real a manutenção urbana de Arcoverde. Registre problemas no seu bairro,
             consulte o andamento da sua solicitação e fiscalize as ações públicas.
           </p>
 
           {/* Busca Imediata de Protocolo no Hero */}
-          <div className="max-w-xl mx-auto mb-8">
-            <div className="bg-white/10 backdrop-blur-md p-1.5 rounded-xl border border-white/20 flex gap-2 shadow-lg">
+          <div className="max-w-xl mx-auto mb-6 sm:mb-8">
+            <div className="bg-white/10 backdrop-blur-md p-1.5 rounded-xl border border-white/20 flex flex-col sm:flex-row gap-2 shadow-lg">
               <div className="relative flex-1">
                 <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-300" />
                 <input
@@ -271,15 +271,15 @@ export default function HomePage() {
               <button
                 onClick={() => buscarProtocoloHandler()}
                 disabled={buscandoProtocolo || !protocolo.trim()}
-                className="btn btn-primary text-xs px-4 py-2 font-medium"
+                className="btn btn-primary text-xs px-5 py-2.5 font-medium w-full sm:w-auto"
               >
                 {buscandoProtocolo ? 'Buscando...' : 'Consultar'}
               </button>
             </div>
           </div>
 
-          {/* Navegação de Abas Segmentadas */}
-          <div className="flex flex-wrap justify-center gap-2 max-w-4xl mx-auto">
+          {/* Navegação de Abas Segmentadas com Scroll no Mobile */}
+          <div className="flex overflow-x-auto no-scrollbar sm:flex-wrap justify-start sm:justify-center gap-2 max-w-4xl mx-auto px-1 py-1 -mx-2 sm:mx-auto">
             {[
               { key: 'dashboard', icon: BarChart3, label: 'Indicadores Públicos' },
               { key: 'protocolo', icon: Search, label: 'Consultar Protocolo' },
@@ -291,7 +291,7 @@ export default function HomePage() {
               return (
                 <button
                   key={key}
-                  className={`btn text-xs font-medium px-4 py-2.5 rounded-lg transition-all ${
+                  className={`btn text-xs font-medium px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-lg transition-all shrink-0 whitespace-nowrap ${
                     active
                       ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
                       : 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700'
@@ -749,48 +749,94 @@ export default function HomePage() {
                 />
               </div>
             ) : (
-              <div className="table-wrapper">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Protocolo</th>
-                      <th>Assunto</th>
-                      <th>Categoria</th>
-                      <th>Bairro</th>
-                      <th>Status</th>
-                      <th>Data</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {demandasFiltradas.map((d) => (
-                      <tr
+              <>
+                {/* Visualização em Cards para Mobile */}
+                <div className="block md:hidden space-y-3">
+                  {demandasFiltradas.map((d) => {
+                    const CatIcon = CATEGORIA_ICON_MAP[d.categoria] || AlertTriangle;
+                    return (
+                      <div
                         key={d.id}
-                        className="text-xs hover:bg-slate-50/80 cursor-pointer"
+                        className="card p-3.5 space-y-2.5 active:bg-slate-50 transition-colors cursor-pointer border-slate-200"
                         onClick={() => buscarProtocoloHandler(d.protocolo)}
                       >
-                        <td className="font-mono font-bold text-blue-700 whitespace-nowrap">
-                          {d.protocolo}
-                        </td>
-                        <td className="max-w-[280px] truncate font-medium text-slate-900">
-                          {d.titulo}
-                        </td>
-                        <td className="text-slate-700 whitespace-nowrap">
-                          {CATEGORIA_LABELS[d.categoria as DemandaCategoria] || d.categoria}
-                        </td>
-                        <td className="text-slate-700 whitespace-nowrap">{d.bairro}</td>
-                        <td>
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${STATUS_COLORS[d.status as keyof typeof STATUS_COLORS]}`}>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-mono font-bold text-xs text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
+                            {d.protocolo}
+                          </span>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${STATUS_COLORS[d.status as keyof typeof STATUS_COLORS]}`}>
                             {STATUS_LABELS[d.status as keyof typeof STATUS_LABELS] || d.status}
                           </span>
-                        </td>
-                        <td className="text-slate-500 whitespace-nowrap tabular-nums">
-                          {new Date(d.created_at).toLocaleDateString('pt-BR')}
-                        </td>
+                        </div>
+
+                        <div>
+                          <p className="font-semibold text-xs text-slate-900 leading-snug line-clamp-2">
+                            {d.titulo}
+                          </p>
+                          <p className="text-[11px] text-slate-500 mt-1 flex items-center gap-1">
+                            <MapPin size={12} className="text-slate-400 shrink-0" />
+                            <span className="truncate">{d.bairro}</span>
+                          </p>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-[11px] text-slate-500">
+                          <span className="flex items-center gap-1 text-slate-600">
+                            <CatIcon size={12} className="text-blue-600 shrink-0" />
+                            <span className="truncate max-w-[140px]">{CATEGORIA_LABELS[d.categoria as DemandaCategoria] || d.categoria}</span>
+                          </span>
+                          <span className="text-[10px] tabular-nums text-slate-400">
+                            {new Date(d.created_at).toLocaleDateString('pt-BR')}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Visualização em Tabela para Desktop / Tablets */}
+                <div className="hidden md:block table-wrapper">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Protocolo</th>
+                        <th>Assunto</th>
+                        <th>Categoria</th>
+                        <th>Bairro</th>
+                        <th>Status</th>
+                        <th>Data</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {demandasFiltradas.map((d) => (
+                        <tr
+                          key={d.id}
+                          className="text-xs hover:bg-slate-50/80 cursor-pointer"
+                          onClick={() => buscarProtocoloHandler(d.protocolo)}
+                        >
+                          <td className="font-mono font-bold text-blue-700 whitespace-nowrap">
+                            {d.protocolo}
+                          </td>
+                          <td className="max-w-[280px] truncate font-medium text-slate-900">
+                            {d.titulo}
+                          </td>
+                          <td className="text-slate-700 whitespace-nowrap">
+                            {CATEGORIA_LABELS[d.categoria as DemandaCategoria] || d.categoria}
+                          </td>
+                          <td className="text-slate-700 whitespace-nowrap">{d.bairro}</td>
+                          <td>
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${STATUS_COLORS[d.status as keyof typeof STATUS_COLORS]}`}>
+                              {STATUS_LABELS[d.status as keyof typeof STATUS_LABELS] || d.status}
+                            </span>
+                          </td>
+                          <td className="text-slate-500 whitespace-nowrap tabular-nums">
+                            {new Date(d.created_at).toLocaleDateString('pt-BR')}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             )}
           </div>
         )}

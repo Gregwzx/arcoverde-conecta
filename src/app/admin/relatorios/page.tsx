@@ -275,20 +275,20 @@ export default function RelatoriosPage() {
           title="Relatórios e Inteligência Operacional"
           description="Filtros analíticos, indicadores de SLA municipal, gráficos estatísticos e exportação oficial"
           action={
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button
-                className="btn btn-secondary"
+                className="btn btn-secondary btn-sm text-xs"
                 onClick={imprimirRelatorio}
                 title="Imprimir relatório analítico oficial em PDF"
               >
-                <Printer size={16} /> Imprimir / PDF
+                <Printer size={14} /> <span>Imprimir / PDF</span>
               </button>
               <button
-                className="btn btn-primary"
+                className="btn btn-primary btn-sm text-xs"
                 onClick={exportarCSV}
                 title="Exportar dados filtrados em formato CSV (Excel)"
               >
-                <FileSpreadsheet size={16} /> Exportar Planilha (CSV)
+                <FileSpreadsheet size={14} /> <span>Exportar Planilha (CSV)</span>
               </button>
             </div>
           }
@@ -321,7 +321,7 @@ export default function RelatoriosPage() {
             <span className="text-xs text-muted">({total} registros correspondentes)</span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-1.5">
             <span className="text-xs text-muted mr-1 hidden sm:inline">Período rápido:</span>
             <button
               onClick={() => aplicarPresetData(7)}
@@ -576,57 +576,95 @@ export default function RelatoriosPage() {
             Nenhuma demanda encontrada para os critérios selecionados.
           </div>
         ) : (
-          <div className="table-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th>Protocolo</th>
-                  <th>Título & Local</th>
-                  <th>Categoria</th>
-                  <th>Secretaria Responsável</th>
-                  <th>Status</th>
-                  <th>Prioridade</th>
-                  <th>Abertura</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginadas.map((demanda) => (
-                  <tr key={demanda.id} className="hover:bg-surface-hover transition-colors text-xs">
-                    <td className="font-mono font-bold text-primary tabular-nums">
+          <>
+            {/* Visualização Mobile: Cards Detalhados */}
+            <div className="block md:hidden space-y-3 p-4 print:hidden">
+              {paginadas.map((demanda) => (
+                <div key={demanda.id} className="p-3.5 bg-slate-50/60 dark:bg-slate-900/60 rounded-xl border border-border space-y-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono font-bold text-xs text-primary">
                       {demanda.protocolo}
-                    </td>
-                    <td>
-                      <div className="font-semibold text-foreground max-w-xs truncate">{demanda.titulo}</div>
-                      <div className="text-muted flex items-center gap-1 mt-0.5 text-[11px]">
-                        <MapPin size={10} className="shrink-0" /> {demanda.bairro} — {demanda.endereco}
-                      </div>
-                    </td>
-                    <td>
-                      {CATEGORIA_LABELS[demanda.categoria]}
-                    </td>
-                    <td>
-                      {demanda.setor?.nome || (
-                        <span className="italic text-muted">Não atribuído</span>
-                      )}
-                    </td>
-                    <td>
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[demanda.status]}`}>
-                        {STATUS_LABELS[demanda.status]}
-                      </span>
-                    </td>
-                    <td>
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold border ${PRIORIDADE_COLORS[demanda.prioridade_faixa]}`}>
-                        {demanda.prioridade_pontuacao} pts — {PRIORIDADE_LABELS[demanda.prioridade_faixa]}
-                      </span>
-                    </td>
-                    <td className="text-muted whitespace-nowrap tabular-nums">
+                    </span>
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${STATUS_COLORS[demanda.status]}`}>
+                      {STATUS_LABELS[demanda.status]}
+                    </span>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold text-foreground text-xs leading-snug line-clamp-2">
+                      {demanda.titulo}
+                    </h4>
+                    <p className="text-[11px] text-muted flex items-center gap-1 mt-1">
+                      <MapPin size={11} className="shrink-0" />
+                      <span className="truncate">{demanda.bairro} — {demanda.endereco}</span>
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-border text-[11px]">
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border ${PRIORIDADE_COLORS[demanda.prioridade_faixa]}`}>
+                      {demanda.prioridade_pontuacao} pts • {PRIORIDADE_LABELS[demanda.prioridade_faixa]}
+                    </span>
+                    <span className="text-muted text-[10px] tabular-nums">
                       {new Date(demanda.created_at).toLocaleDateString('pt-BR')}
-                    </td>
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Visualização Desktop: Tabela Completa (e Impressão) */}
+            <div className="hidden md:block print:block table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Protocolo</th>
+                    <th>Título & Local</th>
+                    <th>Categoria</th>
+                    <th>Secretaria Responsável</th>
+                    <th>Status</th>
+                    <th>Prioridade</th>
+                    <th>Abertura</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {paginadas.map((demanda) => (
+                    <tr key={demanda.id} className="hover:bg-surface-hover transition-colors text-xs">
+                      <td className="font-mono font-bold text-primary tabular-nums">
+                        {demanda.protocolo}
+                      </td>
+                      <td>
+                        <div className="font-semibold text-foreground max-w-xs truncate">{demanda.titulo}</div>
+                        <div className="text-muted flex items-center gap-1 mt-0.5 text-[11px]">
+                          <MapPin size={10} className="shrink-0" /> {demanda.bairro} — {demanda.endereco}
+                        </div>
+                      </td>
+                      <td>
+                        {CATEGORIA_LABELS[demanda.categoria]}
+                      </td>
+                      <td>
+                        {demanda.setor?.nome || (
+                          <span className="italic text-muted">Não atribuído</span>
+                        )}
+                      </td>
+                      <td>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[demanda.status]}`}>
+                          {STATUS_LABELS[demanda.status]}
+                        </span>
+                      </td>
+                      <td>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold border ${PRIORIDADE_COLORS[demanda.prioridade_faixa]}`}>
+                          {demanda.prioridade_pontuacao} pts — {PRIORIDADE_LABELS[demanda.prioridade_faixa]}
+                        </span>
+                      </td>
+                      <td className="text-muted whitespace-nowrap tabular-nums">
+                        {new Date(demanda.created_at).toLocaleDateString('pt-BR')}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
 
         {/* Paginação */}

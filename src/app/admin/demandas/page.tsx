@@ -316,7 +316,72 @@ export default function DemandasPage() {
         />
       ) : (
         <>
-          <div className="table-wrapper">
+          {/* Visualização Mobile: Cards Otimizados */}
+          <div className="block md:hidden space-y-3">
+            {demandas.map((d) => {
+              const CatIcon = CATEGORIA_ICON_MAP[d.categoria] || AlertTriangle;
+              return (
+                <div
+                  key={d.id}
+                  className="card p-4 space-y-3 active:bg-slate-50/80 transition-colors border-slate-200 cursor-pointer"
+                  onClick={() => abrirDetalhe(d)}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="font-mono font-bold text-xs text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
+                      {d.protocolo}
+                    </span>
+                    <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border ${PRIORIDADE_COLORS[d.prioridade_faixa]}`}>
+                        <span className="font-mono font-bold mr-1">{d.prioridade_pontuacao}</span>
+                        <span>• {PRIORIDADE_LABELS[d.prioridade_faixa]}</span>
+                      </span>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${STATUS_COLORS[d.status]}`}>
+                        {STATUS_LABELS[d.status]}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold text-xs sm:text-sm text-slate-900 leading-snug line-clamp-2">
+                      {d.titulo}
+                    </h4>
+                    <p className="text-[11px] text-slate-500 mt-1 flex items-center gap-1">
+                      <MapPin size={12} className="text-slate-400 shrink-0" />
+                      <span className="truncate">{d.endereco ? `${d.endereco} — ${d.bairro}` : d.bairro}</span>
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2.5 border-t border-slate-100 text-xs">
+                    <span className="flex items-center gap-1 text-[11px] text-slate-600">
+                      <CatIcon size={13} className="text-blue-600 shrink-0" />
+                      <span className="truncate max-w-[130px]">{CATEGORIA_LABELS[d.categoria] || d.categoria}</span>
+                    </span>
+
+                    <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        className="btn btn-secondary btn-sm text-[11px] py-1 px-2.5"
+                        onClick={() => abrirDetalhe(d)}
+                      >
+                        <Eye size={13} /> Ver
+                      </button>
+                      <button
+                        className="btn btn-ghost btn-sm text-[11px] py-1 px-2 text-slate-500 hover:text-slate-800"
+                        onClick={() => {
+                          setDemandaSelecionada(d);
+                          setModalEditar(true);
+                        }}
+                      >
+                        <Edit3 size={13} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Visualização Desktop: Tabela Analítica Completa */}
+          <div className="hidden md:block table-wrapper">
             <table>
               <thead>
                 <tr>
@@ -575,8 +640,8 @@ export default function DemandasPage() {
       <Modal open={modalDetalhe} onClose={() => setModalDetalhe(false)} title={`Protocolo ${demandaSelecionada?.protocolo || ''}`} size="lg">
         {demandaSelecionada && (
           <div className="space-y-5">
-            {/* Abas */}
-            <div className="flex border-b border-slate-200 gap-4 text-xs">
+            {/* Abas com rolagem horizontal touch no mobile */}
+            <div className="flex border-b border-slate-200 gap-2 sm:gap-4 text-xs overflow-x-auto no-scrollbar">
               {[
                 { key: 'info', label: 'Visão Geral & Despachos', icon: Eye },
                 { key: 'historico', label: 'Tramitação & Histórico', icon: History },
@@ -584,7 +649,7 @@ export default function DemandasPage() {
               ].map(({ key, label, icon: Icon }) => (
                 <button
                   key={key}
-                  className={`flex items-center gap-1.5 pb-2.5 font-medium border-b-2 transition-colors ${
+                  className={`flex items-center gap-1.5 pb-2.5 font-medium border-b-2 transition-colors shrink-0 whitespace-nowrap ${
                     tabDetalhe === key
                       ? 'border-blue-600 text-blue-700 font-semibold'
                       : 'border-transparent text-slate-500 hover:text-slate-800'

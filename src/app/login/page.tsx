@@ -80,18 +80,18 @@ function LoginContent() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 flex flex-col justify-center">
-      <div className="w-full max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-slate-900 flex flex-col justify-center py-4 sm:py-10">
+      <div className="w-full max-w-6xl mx-auto p-3 sm:p-6 lg:p-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 shadow-2xl">
           {/* Coluna Institucional / Informativa */}
-          <div className="lg:col-span-6 p-8 sm:p-12 bg-linear-to-b from-slate-900 to-slate-950 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-slate-800/80">
+          <div className="lg:col-span-6 p-5 sm:p-8 lg:p-12 bg-linear-to-b from-slate-900 to-slate-950 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-slate-800/80">
             <div>
-              <div className="flex items-center gap-3 mb-8">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600 text-white font-bold text-base tracking-wide shadow-lg shadow-blue-600/30">
+              <div className="flex items-center gap-3 mb-6 sm:mb-8">
+                <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-blue-600 text-white font-bold text-sm sm:text-base tracking-wide shadow-lg shadow-blue-600/30">
                   AC
                 </div>
                 <div>
-                  <h1 className="text-lg font-bold text-white tracking-tight leading-tight">
+                  <h1 className="text-base sm:text-lg font-bold text-white tracking-tight leading-tight">
                     Arcoverde Conecta
                   </h1>
                   <p className="text-xs text-slate-400">
@@ -100,15 +100,15 @@ function LoginContent() {
                 </div>
               </div>
 
-              <div className="space-y-4 mb-8">
+              <div className="space-y-3 sm:space-y-4 mb-6 sm:mb-8">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-950/60 border border-blue-800/50 text-blue-300 text-xs font-medium">
                   <Sparkles size={13} className="text-blue-400" />
                   Solução para o Desafios PE
                 </div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight leading-snug">
+                <h2 className="text-xl sm:text-3xl font-bold text-white tracking-tight leading-snug">
                   Gestão inteligente e priorização de serviços públicos municipais
                 </h2>
-                <p className="text-sm text-slate-300 leading-relaxed font-normal">
+                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-normal">
                   Plataforma integrada de zeladoria urbana que centraliza demandas da população,
                   aplica algoritmo multicritério de priorização e acelera o despacho para as secretarias.
                 </p>
@@ -130,7 +130,7 @@ function LoginContent() {
                     desc: 'Acompanhamento por protocolo e painel de indicadores abertos à população.',
                   },
                 ].map((item, idx) => (
-                  <div key={idx} className="flex items-start gap-3 text-xs">
+                  <div key={idx} className="flex items-start gap-2.5 sm:gap-3 text-xs">
                     <div className="h-5 w-5 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center shrink-0 mt-0.5 border border-blue-500/30">
                       <Check size={12} />
                     </div>
@@ -143,14 +143,14 @@ function LoginContent() {
               </div>
             </div>
 
-            <div className="pt-8 mt-8 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-500">
+            <div className="pt-6 sm:pt-8 mt-6 sm:mt-8 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-500">
               <span>Porta do Sertão Pernambucano</span>
               <span>Ambiente Seguro SSL</span>
             </div>
           </div>
 
           {/* Coluna do Formulário de Acesso */}
-          <div className="lg:col-span-6 p-8 sm:p-12 bg-white flex flex-col justify-center">
+          <div className="lg:col-span-6 p-5 sm:p-8 lg:p-12 bg-white flex flex-col justify-center">
             <div className="max-w-md w-full mx-auto">
               {modo === 'login' ? (
                 <>

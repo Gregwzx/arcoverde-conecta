@@ -273,100 +273,172 @@ export default function UsuariosPage() {
             />
           </div>
         ) : (
-          <div className="table-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th>Servidor / Usuário</th>
-                  <th>Nível de Acesso</th>
-                  <th>Secretaria / Setor Vinculado</th>
-                  <th>Data de Cadastro</th>
-                  <th>Status</th>
-                  <th className="text-right">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {perfisFiltrados.map((perfil) => {
-                  const setorVinculado = setores.find((s) => s.id === perfil.setor_id);
-                  const iniciais = perfil.nome
-                    .split(' ')
-                    .filter(Boolean)
-                    .slice(0, 2)
-                    .map((n) => n[0].toUpperCase())
-                    .join('');
+          <>
+            {/* Visualização Mobile: Cards de Servidores */}
+            <div className="block md:hidden space-y-3">
+              {perfisFiltrados.map((perfil) => {
+                const setorVinculado = setores.find((s) => s.id === perfil.setor_id);
+                const iniciais = perfil.nome
+                  .split(' ')
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .map((n) => n[0].toUpperCase())
+                  .join('');
 
-                  return (
-                    <tr key={perfil.id} className="hover:bg-surface-hover transition-colors">
-                      <td>
-                        <div className="flex items-center gap-3">
-                          <div className={`h-10 w-10 rounded-xl font-bold flex items-center justify-center text-xs shrink-0 border shadow-xs ${ROLE_AVATAR_STYLES[perfil.role]}`}>
-                            {iniciais || perfil.nome.charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            <div className="font-semibold text-foreground text-sm">{perfil.nome}</div>
-                            <div className="text-xs text-muted flex items-center gap-1 mt-0.5">
-                              <Mail size={12} className="shrink-0" /> {perfil.email}
+                return (
+                  <div key={perfil.id} className="card p-4 space-y-3 border-slate-200">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className={`h-10 w-10 rounded-xl font-bold flex items-center justify-center text-xs shrink-0 border shadow-xs ${ROLE_AVATAR_STYLES[perfil.role]}`}>
+                          {iniciais || perfil.nome.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="font-semibold text-slate-900 text-xs sm:text-sm truncate">{perfil.nome}</h4>
+                          <p className="text-xs text-slate-500 truncate flex items-center gap-1 mt-0.5">
+                            <Mail size={11} className="shrink-0 text-slate-400" />
+                            <span className="truncate">{perfil.email}</span>
+                          </p>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => handleToggleAtivo(perfil)}
+                        className="cursor-pointer shrink-0"
+                      >
+                        {perfil.ativo ? (
+                          <Badge text="Ativo" color="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px]" />
+                        ) : (
+                          <Badge text="Inativo" color="bg-slate-100 text-slate-600 border-slate-200 text-[10px]" />
+                        )}
+                      </button>
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-100 flex-wrap gap-2">
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${ROLE_BADGE_STYLES[perfil.role]}`}>
+                        <Shield size={11} /> {ROLE_LABELS[perfil.role]}
+                      </span>
+
+                      <div className="text-[11px] text-slate-500 truncate max-w-[160px]">
+                        {setorVinculado ? setorVinculado.nome : 'Acesso Geral'}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2 pt-1 border-t border-slate-100">
+                      <button
+                        className="btn btn-secondary btn-sm text-xs py-1.5 px-3 flex-1 justify-center"
+                        onClick={() => abrirModalEditar(perfil)}
+                      >
+                        <Edit3 size={13} /> Editar Servidor
+                      </button>
+                      <button
+                        className="btn btn-ghost btn-sm text-xs p-1.5 text-slate-400 hover:text-rose-700 hover:bg-rose-50"
+                        onClick={() => setConfirmExcluir(perfil.id)}
+                        title="Revogar Acesso"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Visualização Desktop: Tabela */}
+            <div className="hidden md:block table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Servidor / Usuário</th>
+                    <th>Nível de Acesso</th>
+                    <th>Secretaria / Setor Vinculado</th>
+                    <th>Data de Cadastro</th>
+                    <th>Status</th>
+                    <th className="text-right">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {perfisFiltrados.map((perfil) => {
+                    const setorVinculado = setores.find((s) => s.id === perfil.setor_id);
+                    const iniciais = perfil.nome
+                      .split(' ')
+                      .filter(Boolean)
+                      .slice(0, 2)
+                      .map((n) => n[0].toUpperCase())
+                      .join('');
+
+                    return (
+                      <tr key={perfil.id} className="hover:bg-surface-hover transition-colors">
+                        <td>
+                          <div className="flex items-center gap-3">
+                            <div className={`h-10 w-10 rounded-xl font-bold flex items-center justify-center text-xs shrink-0 border shadow-xs ${ROLE_AVATAR_STYLES[perfil.role]}`}>
+                              {iniciais || perfil.nome.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <div className="font-semibold text-foreground text-sm">{perfil.nome}</div>
+                              <div className="text-xs text-muted flex items-center gap-1 mt-0.5">
+                                <Mail size={12} className="shrink-0" /> {perfil.email}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </td>
-                      <td>
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${ROLE_BADGE_STYLES[perfil.role]}`}>
-                          <Shield size={12} /> {ROLE_LABELS[perfil.role]}
-                        </span>
-                      </td>
-                      <td>
-                        {setorVinculado ? (
-                          <div className="flex items-center gap-1.5 text-xs font-medium text-foreground">
-                            <Building2 size={13} className="text-muted shrink-0" />
-                            <span>{setorVinculado.nome}</span>
-                          </div>
-                        ) : (
-                          <span className="text-xs text-muted italic">Acesso Institucional Amplo</span>
-                        )}
-                      </td>
-                      <td className="text-xs text-muted tabular-nums">
-                        {new Date(perfil.created_at).toLocaleDateString('pt-BR')}
-                      </td>
-                      <td>
-                        <button
-                          onClick={() => handleToggleAtivo(perfil)}
-                          title="Clique para alternar status do usuário"
-                          className="cursor-pointer focus-ring rounded-full"
-                        >
-                          {perfil.ativo ? (
-                            <Badge text="Ativo" color="bg-emerald-50 text-emerald-700 border-emerald-200" />
+                        </td>
+                        <td>
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${ROLE_BADGE_STYLES[perfil.role]}`}>
+                            <Shield size={12} /> {ROLE_LABELS[perfil.role]}
+                          </span>
+                        </td>
+                        <td>
+                          {setorVinculado ? (
+                            <div className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+                              <Building2 size={13} className="text-muted shrink-0" />
+                              <span>{setorVinculado.nome}</span>
+                            </div>
                           ) : (
-                            <Badge text="Inativo" color="bg-slate-100 text-slate-600 border-slate-200" />
+                            <span className="text-xs text-muted italic">Acesso Institucional Amplo</span>
                           )}
-                        </button>
-                      </td>
-                      <td className="text-right">
-                        <div className="flex items-center justify-end gap-1">
+                        </td>
+                        <td className="text-xs text-muted tabular-nums">
+                          {new Date(perfil.created_at).toLocaleDateString('pt-BR')}
+                        </td>
+                        <td>
                           <button
-                            className="btn btn-secondary p-2 text-xs"
-                            onClick={() => abrirModalEditar(perfil)}
-                            title="Editar Usuário"
-                            aria-label={`Editar ${perfil.nome}`}
+                            onClick={() => handleToggleAtivo(perfil)}
+                            title="Clique para alternar status do usuário"
+                            className="cursor-pointer focus-ring rounded-full"
                           >
-                            <Edit3 size={14} />
+                            {perfil.ativo ? (
+                              <Badge text="Ativo" color="bg-emerald-50 text-emerald-700 border-emerald-200" />
+                            ) : (
+                              <Badge text="Inativo" color="bg-slate-100 text-slate-600 border-slate-200" />
+                            )}
                           </button>
-                          <button
-                            className="btn btn-secondary p-2 text-xs text-rose-600 hover:bg-rose-50 hover:border-rose-200"
-                            onClick={() => setConfirmExcluir(perfil.id)}
-                            title="Revogar Acesso"
-                            aria-label={`Excluir ${perfil.nome}`}
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                        </td>
+                        <td className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              className="btn btn-secondary p-2 text-xs"
+                              onClick={() => abrirModalEditar(perfil)}
+                              title="Editar Usuário"
+                              aria-label={`Editar ${perfil.nome}`}
+                            >
+                              <Edit3 size={14} />
+                            </button>
+                            <button
+                              className="btn btn-secondary p-2 text-xs text-rose-600 hover:bg-rose-50 hover:border-rose-200"
+                              onClick={() => setConfirmExcluir(perfil.id)}
+                              title="Revogar Acesso"
+                              aria-label={`Excluir ${perfil.nome}`}
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 

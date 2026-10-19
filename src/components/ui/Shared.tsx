@@ -85,10 +85,10 @@ interface PageHeaderProps {
 export function PageHeader({ title, description, badge, actions, action }: PageHeaderProps) {
   const renderedActions = actions || action;
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 pb-4 border-b border-slate-200/80">
-      <div>
-        <div className="flex items-center gap-2.5 flex-wrap">
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">{title}</h1>
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-6 pb-4 border-b border-slate-200/80">
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2 flex-wrap">
+          <h1 className="text-lg sm:text-2xl font-bold tracking-tight text-slate-900">{title}</h1>
           {badge && (
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
               {badge}
@@ -97,7 +97,7 @@ export function PageHeader({ title, description, badge, actions, action }: PageH
         </div>
         {description && <p className="text-xs sm:text-sm text-slate-500 mt-1 leading-relaxed">{description}</p>}
       </div>
-      {renderedActions && <div className="flex items-center gap-2 shrink-0">{renderedActions}</div>}
+      {renderedActions && <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">{renderedActions}</div>}
     </div>
   );
 }
@@ -137,7 +137,7 @@ export function CopyButton({ text, label = 'Copiar' }: { text: string; label?: s
     <button
       onClick={handleCopy}
       type="button"
-      className="btn btn-secondary btn-sm text-xs py-1 px-2.5 inline-flex items-center gap-1.5"
+      className="btn btn-secondary btn-sm text-xs py-1 px-2.5 inline-flex items-center gap-1.5 shrink-0"
       title={label}
     >
       {copied ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} className="text-slate-500" />}
@@ -179,17 +179,17 @@ export function ConfirmDialog({
   const handleClose = onCancel || onClose || (() => {});
 
   return (
-    <div className="modal-overlay" onClick={handleClose}>
-      <div className="modal-content max-w-md" onClick={(e) => e.stopPropagation()}>
-        <div className="p-6">
+    <div className="modal-overlay p-3 sm:p-4" onClick={handleClose}>
+      <div className="modal-content max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+        <div className="p-5 sm:p-6">
           <h3 className="text-base font-semibold text-slate-900 mb-2">{title}</h3>
           <p className="text-xs sm:text-sm text-slate-600 mb-6 leading-relaxed">{message}</p>
-          <div className="flex justify-end gap-2.5">
-            <button className="btn btn-secondary text-xs" onClick={handleClose} disabled={loading}>
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-2.5">
+            <button className="btn btn-secondary text-xs w-full sm:w-auto" onClick={handleClose} disabled={loading}>
               {cancelLabel}
             </button>
             <button
-              className={`btn text-xs ${variant === 'danger' ? 'btn-danger' : 'btn-primary'}`}
+              className={`btn text-xs w-full sm:w-auto ${variant === 'danger' ? 'btn-danger' : 'btn-primary'}`}
               onClick={onConfirm}
               disabled={loading}
             >

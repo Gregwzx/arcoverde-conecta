@@ -380,16 +380,55 @@ select.input {
   }
 }
 
-/* --- Responsividade Mobile --- */
+/* --- Responsividade Mobile & Portabilidade --- */
 @media (max-width: 768px) {
   .sidebar {
     position: fixed;
-    z-index: 40;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    height: 100dvh;
+    max-height: 100dvh;
+    z-index: 50;
     transform: translateX(-100%);
     transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
   }
 
   .sidebar.open {
     transform: translateX(0);
   }
 }
+
+/* Previne zoom involuntário em campos de formulário no iOS Safari */
+@media (max-width: 640px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="search"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Utilitários para rolagem por toque fluida sem scrollbars visíveis */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Área de toque acessível */
+@media (pointer: coarse) {
+  .btn,
+  .sidebar-link {
+    min-height: 42px;
+  }
+}
+

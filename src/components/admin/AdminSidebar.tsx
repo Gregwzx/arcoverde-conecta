@@ -16,7 +16,7 @@ import {
   ShieldCheck,
   Building,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
 const navItems = [
@@ -31,6 +31,23 @@ const navItems = [
 export default function AdminSidebar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Trava a rolagem do body quando o menu mobile está aberto
+  useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mobileOpen]);
+
+  // Fecha o menu mobile ao navegar
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
 
   const handleLogout = async () => {
     try {
@@ -50,30 +67,33 @@ export default function AdminSidebar() {
 
   return (
     <>
-      {/* Mobile toggle button */}
+      {/* Botão de alternância no Mobile */}
       <button
-        className="fixed top-3 left-3 z-50 md:hidden btn btn-secondary p-2 shadow-md bg-white border border-slate-300"
+        className="fixed top-2.5 left-3 z-30 md:hidden btn btn-secondary p-2 shadow-md bg-white border border-slate-300"
         onClick={() => setMobileOpen(!mobileOpen)}
-        aria-label="Abrir menu de navegação"
+        aria-label={mobileOpen ? 'Fechar menu de navegação' : 'Abrir menu de navegação'}
+        aria-expanded={mobileOpen}
       >
         {mobileOpen ? <X size={20} /> : <Menu size={20} />}
       </button>
 
-      {/* Overlay mobile */}
+      {/* Overlay backdrop no mobile */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 bg-slate-950/70 z-30 md:hidden backdrop-blur-xs"
+          className="fixed inset-0 bg-slate-950/70 z-40 md:hidden backdrop-blur-xs transition-opacity"
           onClick={() => setMobileOpen(false)}
         />
       )}
 
       {/* Sidebar Principal */}
       <aside
-        className={`sidebar fixed md:sticky top-0 z-40 transition-transform ${mobileOpen ? 'open translate-x-0' : ''}`}
+        className={`sidebar fixed md:sticky top-0 z-50 md:z-30 h-dvh max-h-dvh flex flex-col transition-transform duration-250 ease-out ${
+          mobileOpen ? 'open translate-x-0' : '-translate-x-full md:translate-x-0'
+        }`}
       >
         {/* Cabeçalho Institucional da Sidebar */}
-        <div className="px-5 py-5 border-b border-slate-800/80">
-          <Link href="/admin" className="flex items-center gap-3 group">
+        <div className="px-5 py-4 border-b border-slate-800/80 flex items-center justify-between">
+          <Link href="/admin" className="flex items-center gap-3 group min-w-0">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white font-bold text-sm tracking-wide shadow-md shadow-blue-900/30 shrink-0 group-hover:bg-blue-500 transition-colors">
               AC
             </div>
@@ -87,6 +107,13 @@ export default function AdminSidebar() {
               </p>
             </div>
           </Link>
+          <button
+            onClick={() => setMobileOpen(false)}
+            className="md:hidden text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition-colors shrink-0"
+            aria-label="Fechar menu"
+          >
+            <X size={18} />
+          </button>
         </div>
 
         {/* Identificação de Acesso */}

@@ -250,103 +250,182 @@ export default function SetoresPage() {
           />
         </div>
       ) : (
-        <div className="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>Órgão / Secretaria Municipal</th>
-                <th>Competências e Atuação</th>
-                <th>Gestor Responsável</th>
-                <th>Demandas em Aberto</th>
-                <th>Status</th>
-                <th className="text-right">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {setoresFiltrados.map((setor) => {
-                const gestorNome = getResponsavelNome(setor.responsavel_id);
-                const pendentes = getDemandasCount(setor.id);
-
-                return (
-                  <tr key={setor.id} className="hover:bg-slate-50/80 text-xs">
-                    <td>
-                      <div className="flex items-center gap-3">
-                        <div className="h-9 w-9 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-bold text-xs shrink-0 border border-blue-100">
-                          <Building2 size={16} />
-                        </div>
-                        <div>
-                          <div className="font-semibold text-slate-900">{setor.nome}</div>
-                          <div className="text-[11px] text-slate-400 font-mono">ID: {setor.id.slice(0, 8)}...</div>
-                        </div>
+        <>
+          {/* Visualização Mobile: Cards de Secretarias */}
+          <div className="block md:hidden space-y-3">
+            {setoresFiltrados.map((setor) => {
+              const gestorNome = getResponsavelNome(setor.responsavel_id);
+              const pendentes = getDemandasCount(setor.id);
+              return (
+                <div key={setor.id} className="card p-4 space-y-3 border-slate-200">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="h-9 w-9 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-bold text-xs shrink-0 border border-blue-100">
+                        <Building2 size={16} />
                       </div>
-                    </td>
-                    <td className="text-slate-600 max-w-xs truncate">
-                      {setor.descricao || 'Sem descrição cadastrada'}
-                    </td>
-                    <td>
-                      {gestorNome ? (
-                        <div className="flex items-center gap-2">
-                          <div className="h-6 w-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] font-bold">
-                            {gestorNome.charAt(0)}
-                          </div>
-                          <span className="font-medium text-slate-800">{gestorNome}</span>
-                        </div>
+                      <div>
+                        <h4 className="font-semibold text-slate-900 text-xs sm:text-sm">{setor.nome}</h4>
+                        <span className="text-[10px] text-slate-400 font-mono">ID: {setor.id.slice(0, 8)}...</span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleToggleAtivo(setor)}
+                      className="cursor-pointer shrink-0"
+                    >
+                      {setor.ativo ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          Ativo
+                        </span>
                       ) : (
-                        <span className="text-slate-400 italic">Não atribuído</span>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                          Inativo
+                        </span>
                       )}
-                    </td>
-                    <td>
+                    </button>
+                  </div>
+
+                  {setor.descricao && (
+                    <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                      {setor.descricao}
+                    </p>
+                  )}
+
+                  <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-100">
+                    <div className="text-[11px] text-slate-500">
+                      Gestor: <strong className="text-slate-700">{gestorNome || 'Não atribuído'}</strong>
+                    </div>
+                    <div>
                       {pendentes > 0 ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
-                          <Clock size={11} /> {pendentes} em aberto
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                          <Clock size={10} /> {pendentes} abertas
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                          <CheckCircle2 size={11} /> Em dia
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                          <CheckCircle2 size={10} /> Em dia
                         </span>
                       )}
-                    </td>
-                    <td>
-                      <button
-                        onClick={() => handleToggleAtivo(setor)}
-                        title="Clique para alternar status operacional"
-                        className="cursor-pointer"
-                      >
-                        {setor.ativo ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            Ativo
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2 pt-1 border-t border-slate-100">
+                    <button
+                      className="btn btn-secondary btn-sm text-xs py-1.5 px-3 flex-1 justify-center"
+                      onClick={() => abrirModalEditar(setor)}
+                    >
+                      <Edit3 size={13} /> Editar Órgão
+                    </button>
+                    <button
+                      className="btn btn-ghost btn-sm text-xs p-1.5 text-slate-400 hover:text-rose-700 hover:bg-rose-50"
+                      onClick={() => setConfirmExcluir(setor.id)}
+                      title="Excluir Setor"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Visualização Desktop: Tabela */}
+          <div className="hidden md:block table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Órgão / Secretaria Municipal</th>
+                  <th>Competências e Atuação</th>
+                  <th>Gestor Responsável</th>
+                  <th>Demandas em Aberto</th>
+                  <th>Status</th>
+                  <th className="text-right">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {setoresFiltrados.map((setor) => {
+                  const gestorNome = getResponsavelNome(setor.responsavel_id);
+                  const pendentes = getDemandasCount(setor.id);
+
+                  return (
+                    <tr key={setor.id} className="hover:bg-slate-50/80 text-xs">
+                      <td>
+                        <div className="flex items-center gap-3">
+                          <div className="h-9 w-9 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-bold text-xs shrink-0 border border-blue-100">
+                            <Building2 size={16} />
+                          </div>
+                          <div>
+                            <div className="font-semibold text-slate-900">{setor.nome}</div>
+                            <div className="text-[11px] text-slate-400 font-mono">ID: {setor.id.slice(0, 8)}...</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="text-slate-600 max-w-xs truncate">
+                        {setor.descricao || 'Sem descrição cadastrada'}
+                      </td>
+                      <td>
+                        {gestorNome ? (
+                          <div className="flex items-center gap-2">
+                            <div className="h-6 w-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] font-bold">
+                              {gestorNome.charAt(0)}
+                            </div>
+                            <span className="font-medium text-slate-800">{gestorNome}</span>
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 italic">Não atribuído</span>
+                        )}
+                      </td>
+                      <td>
+                        {pendentes > 0 ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                            <Clock size={11} /> {pendentes} em aberto
                           </span>
                         ) : (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
-                            Inativo
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                            <CheckCircle2 size={11} /> Em dia
                           </span>
                         )}
-                      </button>
-                    </td>
-                    <td className="text-right">
-                      <div className="flex items-center justify-end gap-1">
+                      </td>
+                      <td>
                         <button
-                          className="btn btn-ghost btn-sm p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100"
-                          onClick={() => abrirModalEditar(setor)}
-                          title="Editar Setor"
+                          onClick={() => handleToggleAtivo(setor)}
+                          title="Clique para alternar status operacional"
+                          className="cursor-pointer"
                         >
-                          <Edit3 size={15} />
+                          {setor.ativo ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              Ativo
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                              Inativo
+                            </span>
+                          )}
                         </button>
-                        <button
-                          className="btn btn-ghost btn-sm p-1.5 text-slate-400 hover:text-rose-700 hover:bg-rose-50"
-                          onClick={() => setConfirmExcluir(setor.id)}
-                          title="Excluir Setor"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                      </td>
+                      <td className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            className="btn btn-ghost btn-sm p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100"
+                            onClick={() => abrirModalEditar(setor)}
+                            title="Editar Setor"
+                          >
+                            <Edit3 size={15} />
+                          </button>
+                          <button
+                            className="btn btn-ghost btn-sm p-1.5 text-slate-400 hover:text-rose-700 hover:bg-rose-50"
+                            onClick={() => setConfirmExcluir(setor.id)}
+                            title="Excluir Setor"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       {/* MODAL: Novo Setor */}

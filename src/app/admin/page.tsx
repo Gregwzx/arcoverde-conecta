@@ -276,10 +276,10 @@ export default function AdminDashboard() {
             </div>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={categoriaData} layout="vertical" margin={{ left: 10 }}>
+                <BarChart data={categoriaData} layout="vertical" margin={{ left: 0, right: 12 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
                   <XAxis type="number" tick={{ fontSize: 11, fill: '#64748b' }} />
-                  <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: '#334155' }} width={140} />
+                  <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: '#334155' }} width={115} />
                   <Tooltip content={<CustomTooltip />} />
                   <Bar dataKey="value" fill="#1d4ed8" radius={[0, 4, 4, 0]} name="Ocorrências" />
                 </BarChart>
