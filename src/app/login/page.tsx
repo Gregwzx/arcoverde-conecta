@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Shield, Eye, EyeOff, ArrowLeft, Mail, Lock, AlertCircle, CheckCircle2, Building2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirectTo') || '/admin';
@@ -282,5 +282,40 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function LoginFallback() {
+  return (
+    <div className="min-h-screen bg-slate-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center mb-6">
+        <div className="inline-flex items-center justify-center h-12 w-12 rounded-xl bg-indigo-600 text-white font-bold text-lg mb-3 shadow-sm">
+          AC
+        </div>
+        <h1 className="text-xl font-bold tracking-tight text-white">
+          Arcoverde Conecta
+        </h1>
+        <p className="text-xs text-slate-400 mt-1 flex items-center justify-center gap-1">
+          <Building2 size={13} /> Prefeitura Municipal de Arcoverde • Gestão Interna
+        </p>
+      </div>
+
+      <div className="sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
+        <div className="bg-white py-8 px-6 sm:px-10 shadow-lg rounded-xl border border-slate-200 text-center">
+          <div className="py-8 flex flex-col items-center justify-center gap-3">
+            <div className="h-7 w-7 rounded-full border-2 border-indigo-600 border-t-transparent animate-spin" />
+            <p className="text-xs text-slate-500 font-medium">Carregando autenticação...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginFallback />}>
+      <LoginContent />
+    </Suspense>
   );
 }
