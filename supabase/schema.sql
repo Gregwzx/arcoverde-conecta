@@ -1,6 +1,7 @@
 -- ============================================================
 -- Arcoverde Conecta — Schema do Banco de Dados (Supabase)
 -- Execute este script no SQL Editor do Supabase.
+-- Idempotente: pode ser executado em bancos novos ou já existentes.
 -- ============================================================
 
 -- Habilitar extensões necessárias
@@ -33,12 +34,19 @@ CREATE TABLE IF NOT EXISTS profiles (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
--- FK: setor.responsavel → profiles
-ALTER TABLE setores
-  ADD CONSTRAINT fk_setores_responsavel
-  FOREIGN KEY (responsavel_id)
-  REFERENCES profiles(id)
-  ON DELETE SET NULL;
+-- FK: setor.responsavel → profiles (Criada com verificação idempotente para evitar erro 42710)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'fk_setores_responsavel'
+  ) THEN
+    ALTER TABLE setores
+      ADD CONSTRAINT fk_setores_responsavel
+      FOREIGN KEY (responsavel_id)
+      REFERENCES profiles(id)
+      ON DELETE SET NULL;
+  END IF;
+END $$;
 
 -- ============================================================
 -- TABELA: demandas
@@ -121,27 +129,25 @@ CREATE TABLE IF NOT EXISTS anexos (
 );
 
 -- ============================================================
--- FUNÇÕES AUXILIARES
+-- TABELA: configuracoes (registro único com pesos de priorização)
 -- ============================================================
+CREATE TABLE IF NOT EXISTS configuracoes (
+  id TEXT PRIMARY KEY DEFAULT 'default',
+  dados JSONB NOT NULL DEFAULT '{}',
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
 
--- Gerar protocolo único: ARC-ANO-SEQUENCIAL
-CREATE OR REPLACE FUNCTION gerar_protocolo()
-RETURNS TEXT AS $$
-DECLARE
-  seq INTEGER;
-  ano TEXT;
-BEGIN
-  ano := EXTRACT(YEAR FROM now())::TEXT;
-  SELECT COALESCE(MAX(
-    CAST(SPLIT_PART(protocolo, '-', 3) AS INTEGER)
-  ), 0) + 1
-  INTO seq
-  FROM demandas
-  WHERE protocolo LIKE 'ARC-' || ano || '-%';
-  
-  RETURN 'ARC-' || ano || '-' || LPAD(seq::TEXT, 5, '0');
-END;
-$$ LANGUAGE plpgsql;
+-- ============================================================
+-- TABELA: protocolos_controle (controle atômico de sequencial por ano)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS protocolos_controle (
+  ano TEXT PRIMARY KEY,
+  ultimo_seq INTEGER NOT NULL DEFAULT 0
+);
+
+-- ============================================================
+-- FUNÇÕES AUXILIARES E DE SEGURANÇA
+-- ============================================================
 
 -- Trigger para atualizar updated_at
 CREATE OR REPLACE FUNCTION update_updated_at()
@@ -152,37 +158,116 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE TRIGGER trg_demandas_updated_at
-  BEFORE UPDATE ON demandas
-  FOR EACH ROW
-  EXECUTE FUNCTION update_updated_at();
+-- Função segura para verificar Admin (Sem recursão infinita)
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT COALESCE(
+    (SELECT role = 'admin' FROM profiles WHERE id = auth.uid() AND ativo = true),
+    false
+  );
+$$;
 
-CREATE OR REPLACE TRIGGER trg_profiles_updated_at
-  BEFORE UPDATE ON profiles
-  FOR EACH ROW
-  EXECUTE FUNCTION update_updated_at();
+GRANT EXECUTE ON FUNCTION public.is_admin() TO anon, authenticated;
 
-CREATE OR REPLACE TRIGGER trg_setores_updated_at
-  BEFORE UPDATE ON setores
-  FOR EACH ROW
-  EXECUTE FUNCTION update_updated_at();
+-- Gerar protocolo único atômico e concorrente: ARC-ANO-SEQUENCIAL
+CREATE OR REPLACE FUNCTION gerar_protocolo()
+RETURNS TEXT AS $$
+DECLARE
+  v_ano TEXT;
+  v_seq INTEGER;
+BEGIN
+  v_ano := EXTRACT(YEAR FROM now())::TEXT;
 
--- Auto-criar profile quando um usuário se registra
+  INSERT INTO protocolos_controle (ano, ultimo_seq)
+  VALUES (
+    v_ano,
+    COALESCE((
+      SELECT MAX(CAST(SPLIT_PART(protocolo, '-', 3) AS INTEGER))
+      FROM demandas
+      WHERE protocolo LIKE 'ARC-' || v_ano || '-%'
+    ), 0) + 1
+  )
+  ON CONFLICT (ano) DO UPDATE
+    SET ultimo_seq = protocolos_controle.ultimo_seq + 1
+  RETURNING ultimo_seq INTO v_seq;
+
+  RETURN 'ARC-' || v_ano || '-' || LPAD(v_seq::TEXT, 5, '0');
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+GRANT EXECUTE ON FUNCTION gerar_protocolo() TO anon, authenticated;
+
+-- Auto-criar profile quando um usuário se registra (ROLE FIXA EM 'servidor')
 CREATE OR REPLACE FUNCTION handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO profiles (id, email, nome, role)
+  INSERT INTO profiles (id, email, nome, role, ativo)
   VALUES (
     NEW.id,
     NEW.email,
     COALESCE(NEW.raw_user_meta_data->>'nome', NEW.email),
-    COALESCE(NEW.raw_user_meta_data->>'role', 'servidor')
-  );
+    'servidor', -- SEGURANÇA: Previne escalonamento via metadados do cliente
+    true
+  )
+  ON CONFLICT (id) DO NOTHING;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
-CREATE OR REPLACE TRIGGER on_auth_user_created
+-- Previne que usuários comuns alterem seu próprio role ou status ativo
+CREATE OR REPLACE FUNCTION prevent_role_escalation()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF (NEW.role IS DISTINCT FROM OLD.role OR NEW.ativo IS DISTINCT FROM OLD.ativo) THEN
+    IF NOT (public.is_admin() OR auth.role() = 'service_role' OR current_user = 'postgres') THEN
+      RAISE EXCEPTION 'Acesso negado: apenas administradores podem alterar permissões (role) ou ativação de usuários.';
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- ============================================================
+-- TRIGGERS
+-- ============================================================
+
+DROP TRIGGER IF EXISTS trg_demandas_updated_at ON demandas;
+CREATE TRIGGER trg_demandas_updated_at
+  BEFORE UPDATE ON demandas
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at();
+
+DROP TRIGGER IF EXISTS trg_profiles_updated_at ON profiles;
+CREATE TRIGGER trg_profiles_updated_at
+  BEFORE UPDATE ON profiles
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at();
+
+DROP TRIGGER IF EXISTS trg_setores_updated_at ON setores;
+CREATE TRIGGER trg_setores_updated_at
+  BEFORE UPDATE ON setores
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at();
+
+DROP TRIGGER IF EXISTS trg_configuracoes_updated_at ON configuracoes;
+CREATE TRIGGER trg_configuracoes_updated_at
+  BEFORE UPDATE ON configuracoes
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at();
+
+DROP TRIGGER IF EXISTS trg_prevent_role_escalation ON profiles;
+CREATE TRIGGER trg_prevent_role_escalation
+  BEFORE UPDATE ON profiles
+  FOR EACH ROW
+  EXECUTE FUNCTION prevent_role_escalation();
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW
   EXECUTE FUNCTION handle_new_user();
@@ -196,58 +281,52 @@ ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE setores ENABLE ROW LEVEL SECURITY;
 ALTER TABLE historico_alteracoes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE anexos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE configuracoes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE protocolos_controle ENABLE ROW LEVEL SECURITY;
 
 -- DEMANDAS: Leitura pública e inserção pública pelo cidadão
+DROP POLICY IF EXISTS "demandas_public_read" ON demandas;
 CREATE POLICY "demandas_public_read" ON demandas
   FOR SELECT USING (publica = true);
 
+DROP POLICY IF EXISTS "demandas_public_insert" ON demandas;
 CREATE POLICY "demandas_public_insert" ON demandas
   FOR INSERT WITH CHECK (publica = true);
 
+DROP POLICY IF EXISTS "demandas_auth_all" ON demandas;
 CREATE POLICY "demandas_auth_all" ON demandas
   FOR ALL USING (auth.role() = 'authenticated');
 
--- FUNÇÃO SEGURA PARA VERIFICAR ADMIN (Sem recursão infinita)
-CREATE OR REPLACE FUNCTION public.is_admin()
-RETURNS BOOLEAN
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public
-AS $$
-  SELECT COALESCE(
-    (SELECT role = 'admin' FROM profiles WHERE id = auth.uid()),
-    false
-  );
-$$;
-
--- PROFILES: Apenas autenticados
+-- PROFILES: Leitura autenticada, auto-atualização restrita, total para admin
+DROP POLICY IF EXISTS "profiles_auth_read" ON profiles;
 CREATE POLICY "profiles_auth_read" ON profiles
   FOR SELECT USING (auth.role() = 'authenticated');
 
+DROP POLICY IF EXISTS "profiles_own_update" ON profiles;
 CREATE POLICY "profiles_own_update" ON profiles
-  FOR UPDATE USING (auth.uid() = id);
+  FOR UPDATE USING (auth.uid() = id)
+  WITH CHECK (auth.uid() = id);
 
+DROP POLICY IF EXISTS "profiles_admin_all" ON profiles;
 CREATE POLICY "profiles_admin_all" ON profiles
   FOR ALL USING (public.is_admin());
 
--- SETORES: Leitura pública, escrita autenticada
+-- SETORES: Leitura pública, alteração administrativa
+DROP POLICY IF EXISTS "setores_public_read" ON setores;
 CREATE POLICY "setores_public_read" ON setores
   FOR SELECT USING (true);
 
-CREATE POLICY "setores_auth_write" ON setores
-  FOR ALL USING (auth.role() = 'authenticated');
+DROP POLICY IF EXISTS "setores_admin_write" ON setores;
+DROP POLICY IF EXISTS "setores_auth_write" ON setores;
+CREATE POLICY "setores_admin_write" ON setores
+  FOR ALL USING (public.is_admin());
 
--- HISTÓRICO:
--- Inserção pelo cidadão (somente registros públicos de criação)
+-- HISTÓRICO: Inserção cidadão, leitura pública restrita a não-internos
+DROP POLICY IF EXISTS "historico_public_insert" ON historico_alteracoes;
 CREATE POLICY "historico_public_insert" ON historico_alteracoes
   FOR INSERT WITH CHECK (interno = false);
 
--- Apenas autenticados (comentários internos e despachos)
-CREATE POLICY "historico_auth_all" ON historico_alteracoes
-  FOR ALL USING (auth.role() = 'authenticated');
-
--- Histórico público (apenas não-internos de demandas públicas)
+DROP POLICY IF EXISTS "historico_public_read" ON historico_alteracoes;
 CREATE POLICY "historico_public_read" ON historico_alteracoes
   FOR SELECT USING (
     interno = false AND EXISTS (
@@ -255,13 +334,42 @@ CREATE POLICY "historico_public_read" ON historico_alteracoes
     )
   );
 
--- ANEXOS
-CREATE POLICY "anexos_auth_all" ON anexos
+DROP POLICY IF EXISTS "historico_auth_all" ON historico_alteracoes;
+CREATE POLICY "historico_auth_all" ON historico_alteracoes
   FOR ALL USING (auth.role() = 'authenticated');
 
+-- ANEXOS
+DROP POLICY IF EXISTS "anexos_public_read" ON anexos;
 CREATE POLICY "anexos_public_read" ON anexos
   FOR SELECT USING (
     EXISTS (
       SELECT 1 FROM demandas WHERE id = demanda_id AND publica = true
     )
   );
+
+DROP POLICY IF EXISTS "anexos_public_insert" ON anexos;
+CREATE POLICY "anexos_public_insert" ON anexos
+  FOR INSERT WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM demandas WHERE id = demanda_id AND publica = true
+    )
+  );
+
+DROP POLICY IF EXISTS "anexos_auth_all" ON anexos;
+CREATE POLICY "anexos_auth_all" ON anexos
+  FOR ALL USING (auth.role() = 'authenticated');
+
+-- CONFIGURAÇÕES: Leitura pública (pesos transparentes), escrita restrita a Admin
+DROP POLICY IF EXISTS "configuracoes_public_read" ON configuracoes;
+CREATE POLICY "configuracoes_public_read" ON configuracoes
+  FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "configuracoes_admin_write" ON configuracoes;
+DROP POLICY IF EXISTS "configuracoes_auth_write" ON configuracoes;
+CREATE POLICY "configuracoes_admin_write" ON configuracoes
+  FOR ALL USING (public.is_admin());
+
+-- PROTOCOLOS_CONTROLE
+DROP POLICY IF EXISTS "protocolos_admin_all" ON protocolos_controle;
+CREATE POLICY "protocolos_admin_all" ON protocolos_controle
+  FOR ALL USING (public.is_admin());

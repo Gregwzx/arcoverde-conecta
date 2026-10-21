@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   Shield, Eye, EyeOff, ArrowLeft, Mail, Lock, AlertCircle,
-  CheckCircle2, Building2, Check, Sparkles, FileText, BarChart3
+  CheckCircle2, Building2, Check, Sparkles, FileText, BarChart3, User
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
@@ -14,7 +14,8 @@ function LoginContent() {
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirectTo') || '/admin';
 
-  const [modo, setModo] = useState<'login' | 'recuperar'>('login');
+  const [modo, setModo] = useState<'login' | 'cadastro' | 'recuperar'>('login');
+  const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [mostrarSenha, setMostrarSenha] = useState(false);
@@ -33,7 +34,7 @@ function LoginContent() {
 
       if (error) {
         if (error.message.includes('Invalid login credentials')) {
-          setErro('E-mail institucional ou senha incorretos.');
+          setErro('E-mail ou senha incorretos.');
         } else {
           setErro(error.message);
         }
@@ -44,6 +45,57 @@ function LoginContent() {
       router.refresh();
     } catch {
       setErro('Falha ao comunicar com o serviço de autenticação. Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCadastro = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErro('');
+    setSucesso('');
+
+    if (!nome.trim() || !email.trim() || !senha) {
+      setErro('Preencha todos os campos obrigatórios.');
+      return;
+    }
+
+    if (senha.length < 6) {
+      setErro('A senha deve ter no mínimo 6 caracteres.');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const supabase = createClient();
+      const emailLimpo = email.trim().toLowerCase();
+
+      // Cadastra o usuário no Supabase Auth.
+      // O perfil no banco é criado automaticamente pelo trigger handle_new_user com a role fixa 'servidor'.
+      const { data, error } = await supabase.auth.signUp({
+        email: emailLimpo,
+        password: senha,
+        options: {
+          data: {
+            nome: nome.trim(),
+          },
+        },
+      });
+
+      if (error) {
+        setErro(error.message);
+        return;
+      }
+
+      if (data.session) {
+        router.push(redirectTo);
+        router.refresh();
+      } else {
+        setSucesso('Conta criada com sucesso! Você já pode entrar com seu e-mail e senha.');
+      }
+    } catch {
+      setErro('Falha ao processar o cadastro de servidor. Tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -159,7 +211,7 @@ function LoginContent() {
                       Acesso ao Painel de Servidores
                     </h2>
                     <p className="text-xs text-slate-500 mt-1">
-                      Informe suas credenciais institucionais para gerenciar demandas e secretarias.
+                      Informe suas credenciais para gerenciar demandas e secretarias.
                     </p>
                   </div>
 
@@ -173,14 +225,14 @@ function LoginContent() {
                   <form onSubmit={handleLogin} className="space-y-4">
                     <div>
                       <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                        E-mail Institucional
+                        E-mail
                       </label>
                       <div className="relative">
                         <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                         <input
                           type="email"
                           className="input pl-10 text-sm"
-                          placeholder="servidor@arcoverde.pe.gov.br"
+                          placeholder="servidor@email.com"
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
                           required
@@ -232,6 +284,16 @@ function LoginContent() {
                         {loading ? 'Validando Acesso...' : 'Acessar Painel de Gestão'}
                       </button>
                     </div>
+
+                    <div className="text-center pt-2">
+                      <button
+                        type="button"
+                        className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                        onClick={() => { setModo('cadastro'); setErro(''); setSucesso(''); }}
+                      >
+                        Não possui cadastro? Criar conta de servidor
+                      </button>
+                    </div>
                   </form>
 
                   {/* Divisor para Acesso de Avaliação */}
@@ -264,6 +326,123 @@ function LoginContent() {
                     </button>
                   </div>
                 </>
+              ) : modo === 'cadastro' ? (
+                <>
+                  <div className="mb-6">
+                    <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+                      Cadastro de Servidor
+                    </h2>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Crie sua conta com qualquer e-mail válido para acessar o sistema.
+                    </p>
+                  </div>
+
+                  {erro && (
+                    <div className="flex items-start gap-2.5 p-3.5 mb-5 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-800 animate-fade-in">
+                      <AlertCircle size={16} className="shrink-0 mt-0.5 text-rose-600" />
+                      <span>{erro}</span>
+                    </div>
+                  )}
+
+                  {sucesso ? (
+                    <div className="space-y-4">
+                      <div className="flex items-start gap-2.5 p-3.5 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-800">
+                        <CheckCircle2 size={16} className="shrink-0 mt-0.5 text-emerald-600" />
+                        <span>{sucesso}</span>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn btn-primary w-full text-xs py-2.5"
+                        onClick={() => { setModo('login'); setErro(''); setSucesso(''); }}
+                      >
+                        Ir para o Login
+                      </button>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleCadastro} className="space-y-4">
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                          Nome Completo *
+                        </label>
+                        <div className="relative">
+                          <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                          <input
+                            type="text"
+                            className="input pl-10 text-sm"
+                            placeholder="Seu Nome Completo"
+                            value={nome}
+                            onChange={(e) => setNome(e.target.value)}
+                            required
+                            autoFocus
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                          E-mail *
+                        </label>
+                        <div className="relative">
+                          <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                          <input
+                            type="email"
+                            className="input pl-10 text-sm"
+                            placeholder="seu.email@exemplo.com"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                          Senha de Acesso *
+                        </label>
+                        <div className="relative">
+                          <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                          <input
+                            type={mostrarSenha ? 'text' : 'password'}
+                            className="input pl-10 pr-10 text-sm"
+                            placeholder="Mínimo 6 caracteres"
+                            value={senha}
+                            onChange={(e) => setSenha(e.target.value)}
+                            required
+                            minLength={6}
+                          />
+                          <button
+                            type="button"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
+                            onClick={() => setMostrarSenha(!mostrarSenha)}
+                            aria-label={mostrarSenha ? 'Ocultar senha' : 'Exibir senha'}
+                          >
+                            {mostrarSenha ? <EyeOff size={16} /> : <Eye size={16} />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="pt-2">
+                        <button
+                          type="submit"
+                          className="btn btn-primary w-full py-2.5 font-medium shadow-md shadow-blue-600/20"
+                          disabled={loading}
+                        >
+                          {loading ? 'Criando Conta...' : 'Cadastrar como Servidor'}
+                        </button>
+                      </div>
+
+                      <div className="text-center pt-2">
+                        <button
+                          type="button"
+                          className="text-xs text-slate-600 hover:text-slate-900 font-medium"
+                          onClick={() => { setModo('login'); setErro(''); setSucesso(''); }}
+                        >
+                          Já possui conta? Fazer login
+                        </button>
+                      </div>
+                    </form>
+                  )}
+                </>
               ) : (
                 <>
                   <div className="mb-6">
@@ -271,7 +450,7 @@ function LoginContent() {
                       Recuperação de Senha
                     </h2>
                     <p className="text-xs text-slate-500 mt-1">
-                      Digite seu e-mail institucional para receber as instruções de recuperação.
+                      Digite seu e-mail para receber as instruções de recuperação.
                     </p>
                   </div>
 
@@ -300,14 +479,14 @@ function LoginContent() {
                     <form onSubmit={handleRecuperar} className="space-y-4">
                       <div>
                         <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                          E-mail Institucional
+                          E-mail
                         </label>
                         <div className="relative">
                           <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                           <input
                             type="email"
                             className="input pl-10 text-sm"
-                            placeholder="servidor@arcoverde.pe.gov.br"
+                            placeholder="servidor@email.com"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required

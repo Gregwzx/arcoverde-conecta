@@ -113,9 +113,10 @@ export default function UsuariosPage() {
       setMensagem({ tipo: 'sucesso', texto: 'Servidor / Usuário cadastrado com sucesso!' });
       setModalNovo(false);
       await carregarDados();
-    } catch (err) {
+    } catch (err: unknown) {
       console.error(err);
-      setMensagem({ tipo: 'erro', texto: 'Não foi possível cadastrar o usuário.' });
+      const msg = err instanceof Error ? err.message : 'Não foi possível cadastrar o usuário.';
+      setMensagem({ tipo: 'erro', texto: msg });
     } finally {
       setSalvando(false);
       setTimeout(() => setMensagem(null), 4000);
@@ -462,17 +463,17 @@ export default function UsuariosPage() {
 
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-muted mb-1">
-              E-mail Institucional *
+              E-mail *
             </label>
             <input
               type="email"
               className="input"
-              placeholder="servidor@arcoverde.pe.gov.br"
+              placeholder="servidor@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
-            <p className="text-xs text-muted mt-1">Utilize o e-mail oficial para login e notificações do sistema.</p>
+            <p className="text-xs text-muted mt-1">Utilize um e-mail válido para login e notificações do sistema.</p>
           </div>
 
           <div>
@@ -540,7 +541,7 @@ export default function UsuariosPage() {
 
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-muted mb-1">
-              E-mail Institucional *
+              E-mail *
             </label>
             <input
               type="email"

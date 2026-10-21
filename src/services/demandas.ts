@@ -16,17 +16,8 @@ import {
 
 const supabase = createClient();
 
-// Configurações em cache local para personalização administrativa de pesos
-let configuracoesAtuais: ConfiguracoesPrefeitura = { ...MOCK_CONFIGURACOES };
-
-if (typeof window !== 'undefined') {
-  try {
-    const cached = localStorage.getItem('ac_config');
-    if (cached) configuracoesAtuais = JSON.parse(cached);
-  } catch {
-    // Silently ignore storage error
-  }
-}
+// Cache em memória — populado do Supabase na primeira leitura
+let configuracoesCache: ConfiguracoesPrefeitura | null = null;
 
 // --- Consultas de Demandas (Área Administrativa) ---
 
@@ -169,16 +160,25 @@ export interface NovaDemandaInput {
 }
 
 export async function criarDemanda(input: NovaDemandaInput): Promise<Demanda> {
-  const ano = new Date().getFullYear();
-  // Busca a contagem atual para gerar protocolo sequencial seguro
-  const { count } = await supabase
-    .from('demandas')
-    .select('id', { count: 'exact', head: true });
-
-  const seq = String((count || 0) + 1).padStart(5, '0');
-  const protocolo = `ARC-${ano}-${seq}`;
+  // Gerar protocolo via função SQL no servidor (evita colisão em concorrência)
+  let protocolo: string | null = null;
+  const { data: protocoloRpc, error: rpcError } = await supabase.rpc('gerar_protocolo');
+  if (!rpcError && protocoloRpc) {
+    protocolo = protocoloRpc;
+  } else {
+    if (rpcError) {
+      console.warn('RPC gerar_protocolo indisponível no Supabase, usando cálculo sequencial:', rpcError.message);
+    }
+    const ano = new Date().getFullYear();
+    const { count } = await supabase
+      .from('demandas')
+      .select('id', { count: 'exact', head: true });
+    const seq = String((count || 0) + 1).padStart(5, '0');
+    protocolo = `ARC-${ano}-${seq}`;
+  }
 
   // Cálculo da pontuação de prioridade transparente
+  const config = await obterConfiguracoes();
   const resultadoPrioridade = calcularPrioridade(
     {
       risco_seguranca: input.risco_seguranca || 0,
@@ -186,8 +186,8 @@ export async function criarDemanda(input: NovaDemandaInput): Promise<Demanda> {
       tempo_espera_dias: 0,
       agravamento: input.agravamento || 0,
     },
-    configuracoesAtuais.pesos_priorizacao,
-    configuracoesAtuais.faixas_prioridade
+    config.pesos_priorizacao,
+    config.faixas_prioridade
   );
 
   const novaDemanda = {
@@ -257,6 +257,7 @@ export async function atualizarDemanda(id: string, updates: Partial<Demanda>): P
       Math.floor((Date.now() - new Date(current.created_at).getTime()) / (1000 * 60 * 60 * 24))
     );
 
+    const config = await obterConfiguracoes();
     const recalculado = calcularPrioridade(
       {
         risco_seguranca: updates.risco_seguranca ?? current.risco_seguranca,
@@ -264,8 +265,8 @@ export async function atualizarDemanda(id: string, updates: Partial<Demanda>): P
         tempo_espera_dias: diasEmAberto,
         agravamento: updates.agravamento ?? current.agravamento,
       },
-      configuracoesAtuais.pesos_priorizacao,
-      configuracoesAtuais.faixas_prioridade
+      config.pesos_priorizacao,
+      config.faixas_prioridade
     );
 
     updates.prioridade_pontuacao = recalculado.pontuacao;
@@ -512,21 +513,22 @@ export async function criarPerfil(input: {
   role: 'admin' | 'gestor' | 'servidor';
   setor_id?: string | null;
 }): Promise<Profile> {
-  const { data, error } = await supabase
-    .from('profiles')
-    .insert({
+  // Chama API Route segura que usa service_role para criar no Supabase Auth
+  const response = await fetch('/api/usuarios/criar', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
       nome: input.nome.trim(),
       email: input.email.trim().toLowerCase(),
       role: input.role,
       setor_id: input.setor_id || null,
-      ativo: true,
-    })
-    .select()
-    .single();
+    }),
+  });
 
-  if (error || !data) {
-    console.error('Erro ao cadastrar perfil no Supabase:', error);
-    throw error || new Error('Não foi possível cadastrar o usuário no Supabase.');
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || 'Não foi possível cadastrar o usuário.');
   }
 
   return data as Profile;
@@ -613,24 +615,76 @@ export async function listarBairros(): Promise<string[]> {
 // --- Configurações da Prefeitura & Priorização ---
 
 export async function obterConfiguracoes(): Promise<ConfiguracoesPrefeitura> {
-  return configuracoesAtuais;
+  // Retornar cache em memória se disponível
+  if (configuracoesCache) return configuracoesCache;
+
+  // Tentar localStorage no navegador
+  if (typeof window !== 'undefined') {
+    try {
+      const cached = localStorage.getItem('ac_config');
+      if (cached) {
+        configuracoesCache = JSON.parse(cached);
+      }
+    } catch {
+      // Ignorar erro
+    }
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('configuracoes')
+      .select('dados')
+      .eq('id', 'default')
+      .single();
+
+    if (!error && data?.dados) {
+      configuracoesCache = data.dados as ConfiguracoesPrefeitura;
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('ac_config', JSON.stringify(configuracoesCache));
+        } catch {}
+      }
+      return configuracoesCache;
+    }
+  } catch {
+    // Banco pode não ter a tabela ainda — usar padrão ou cache local
+  }
+
+  if (!configuracoesCache) {
+    configuracoesCache = { ...MOCK_CONFIGURACOES };
+  }
+  return configuracoesCache;
 }
 
 export async function salvarConfiguracoes(
   novas: Partial<ConfiguracoesPrefeitura>
 ): Promise<ConfiguracoesPrefeitura> {
-  configuracoesAtuais = {
-    ...configuracoesAtuais,
-    ...novas,
-  };
+  const atuais = await obterConfiguracoes();
+  const merged: ConfiguracoesPrefeitura = { ...atuais, ...novas };
+
+  // Atualizar cache em memória e localStorage imediatamente
+  configuracoesCache = merged;
   if (typeof window !== 'undefined') {
     try {
-      localStorage.setItem('ac_config', JSON.stringify(configuracoesAtuais));
+      localStorage.setItem('ac_config', JSON.stringify(merged));
     } catch {
-      // Ignorar
+      // Ignorar erro de localStorage
     }
   }
-  return configuracoesAtuais;
+
+  try {
+    const { error } = await supabase
+      .from('configuracoes')
+      .upsert({ id: 'default', dados: merged }, { onConflict: 'id' });
+
+    if (error) {
+      console.warn('Aviso ao sincronizar configurações no Supabase:', error.message);
+    }
+  } catch (err) {
+    console.warn('Aviso ao persistir configurações no Supabase:', err);
+  }
+
+  return configuracoesCache;
 }
 
 // --- Povoar Dados de Demonstração DIRETAMENTE no Supabase (Para Avaliação) ---

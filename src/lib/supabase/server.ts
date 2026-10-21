@@ -28,7 +28,13 @@ export async function createServerSupabaseClient() {
 
 export async function createServiceRoleClient() {
   const { createClient } = await import('@supabase/supabase-js');
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!key) {
+    throw new Error(
+      'SUPABASE_SERVICE_ROLE_KEY não está configurada. ' +
+      'Adicione-a nas variáveis de ambiente do servidor (Vercel / .env.local).'
+    );
+  }
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     key,
