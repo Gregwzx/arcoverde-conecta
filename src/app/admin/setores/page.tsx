@@ -54,7 +54,8 @@ export default function SetoresPage() {
   }, []);
 
   useEffect(() => {
-    carregarDados();
+    const id = setTimeout(() => { carregarDados(); }, 0);
+    return () => clearTimeout(id);
   }, [carregarDados]);
 
   const abrirModalNovo = () => {

@@ -15,8 +15,8 @@ interface StatCardProps {
 
 export function StatCard({ title, value, subtitle, icon: Icon, color = 'text-blue-600', trend }: StatCardProps) {
   return (
-    <div className="card-stat animate-fade-in group">
-      <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-50 border border-slate-100 group-hover:border-slate-200 transition-colors ${color}`}>
+    <div className="card-stat animate-fade-in group card-3d">
+      <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-50 border border-slate-100 group-hover:border-slate-200 transition-all duration-200 ${color} group-hover:scale-105`}>
         <Icon size={20} className="transition-transform group-hover:scale-105" />
       </div>
       <div className="flex-1 min-w-0">
@@ -85,7 +85,7 @@ interface PageHeaderProps {
 export function PageHeader({ title, description, badge, actions, action }: PageHeaderProps) {
   const renderedActions = actions || action;
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-6 pb-4 border-b border-slate-200/80">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-6 pb-4 border-b border-slate-200/80 animate-fade-in">
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 flex-wrap">
           <h1 className="text-lg sm:text-2xl font-bold tracking-tight text-slate-900">{title}</h1>
@@ -148,7 +148,22 @@ export function CopyButton({ text, label = 'Copiar' }: { text: string; label?: s
   );
 }
 
-// --- Confirm Dialog ---
+// --- Toast ---
+interface ToastProps {
+  type?: 'success' | 'error' | 'loading';
+  message: string;
+  visible: boolean;
+}
+
+export function Toast({ type = 'success', message, visible }: ToastProps) {
+  if (!visible) return null;
+  const color = type === 'error' ? 'bg-rose-600' : type === 'loading' ? 'bg-slate-700' : 'bg-emerald-600';
+  return (
+    <div className={`fixed bottom-4 right-4 z-50 px-4 py-3 rounded-lg text-white text-sm shadow-lg animate-slide-up ${color}`}>
+      {message}
+    </div>
+  );
+}
 interface ConfirmDialogProps {
   open: boolean;
   title: string;

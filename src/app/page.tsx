@@ -132,7 +132,8 @@ export default function HomePage() {
   }, [filtroCategoria, filtroBairro, filtroStatus]);
 
   useEffect(() => {
-    carregarDados();
+    const id = setTimeout(() => { carregarDados(); }, 0);
+    return () => clearTimeout(id);
   }, [carregarDados]);
 
   const buscarProtocoloHandler = async (protAlvo?: string) => {
@@ -173,24 +174,6 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
-      {/* 1. Barra de Identificação Governamental */}
-      <div className="bg-slate-900 border-b border-slate-800 text-[11px] text-slate-300 py-1.5 px-4">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-1.5">
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-white tracking-wide">
-              Prefeitura Municipal de Arcoverde
-            </span>
-            <span className="text-slate-500">•</span>
-            <span className="text-slate-300">Pernambuco</span>
-          </div>
-          <div className="flex items-center gap-4 text-slate-400">
-            <span>Canal Oficial de Atendimento e Zeladoria</span>
-            <span className="hidden md:inline text-slate-600">|</span>
-            <span className="hidden md:inline">Ouvidoria: (87) 3821-9000</span>
-          </div>
-        </div>
-      </div>
-
       {/* 2. Header Institucional */}
       <header className="bg-white border-b border-slate-200/90 sticky top-0 z-30 shadow-xs">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
@@ -210,14 +193,6 @@ export default function HomePage() {
             </Link>
 
             <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
-              <button
-                onClick={() => setSecaoAtiva('protocolo')}
-                className="hidden md:inline-flex items-center gap-1.5 text-xs text-slate-700 hover:text-blue-700 font-medium px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-colors"
-              >
-                <Search size={14} className="text-slate-400" />
-                <span>Consultar Protocolo</span>
-              </button>
-
               <button
                 onClick={() => setSecaoAtiva('registrar')}
                 className="btn btn-primary btn-sm text-xs gap-1 sm:gap-1.5 font-medium shadow-sm px-2.5 sm:px-3"
@@ -636,6 +611,30 @@ export default function HomePage() {
                       </div>
                     </div>
                   )}
+
+                  {/* Fotos e Anexos Comprobatórios */}
+                  {resultadoProtocolo.anexos && resultadoProtocolo.anexos.length > 0 && (
+                    <div>
+                      <h5 className="text-xs font-bold uppercase tracking-wider text-slate-700 mb-2.5">
+                        Fotos e Registros da Ocorrência ({resultadoProtocolo.anexos.length})
+                      </h5>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        {resultadoProtocolo.anexos.map((anx) => (
+                          <div key={anx.id} className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs">
+                            <span className="font-medium text-slate-800 truncate pr-2">{anx.nome_arquivo}</span>
+                            <a
+                              href={anx.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:text-blue-800 font-semibold shrink-0"
+                            >
+                              Ver Foto
+                            </a>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -921,8 +920,7 @@ export default function HomePage() {
           </div>
 
           <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-500">
-            <p>© 2026 Prefeitura Municipal de Arcoverde • Projeto Desafios PE. Todos os direitos reservados.</p>
-            <p className="text-slate-500">Solução desenvolvida com React, Next.js e Supabase</p>
+            <p>© 2026 gregwzx — Todos os direitos reservados. github.com/gregwzx</p>
           </div>
         </div>
       </footer>

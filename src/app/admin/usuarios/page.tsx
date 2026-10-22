@@ -63,8 +63,8 @@ export default function UsuariosPage() {
     try {
       setLoading(true);
       const [perfisData, setoresData] = await Promise.all([
-        listarPerfis(),
-        listarSetores(),
+        listarPerfis().catch(() => []),
+        listarSetores().catch(() => []),
       ]);
       setPerfis(perfisData);
       setSetores(setoresData);
@@ -76,7 +76,8 @@ export default function UsuariosPage() {
   }, []);
 
   useEffect(() => {
-    carregarDados();
+    const id = setTimeout(() => { carregarDados(); }, 0);
+    return () => clearTimeout(id);
   }, [carregarDados]);
 
   const abrirModalNovo = () => {

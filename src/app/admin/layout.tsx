@@ -16,11 +16,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {/* Topbar Institucional Administrativa */}
         <header className="h-14 bg-white border-b border-slate-200/80 px-3 sm:px-6 md:px-8 flex items-center justify-between sticky top-0 z-20">
           <div className="flex items-center gap-2 sm:gap-3 pl-11 md:pl-0 min-w-0">
-            <span className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-slate-700 shrink-0">
-              <Building2 size={14} className="text-blue-600" />
-              Prefeitura de Arcoverde
-            </span>
-            <span className="hidden sm:inline text-slate-300">•</span>
             <span className="text-xs text-slate-500 font-medium truncate">
               Painel de Zeladoria Urbana
             </span>

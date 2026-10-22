@@ -23,14 +23,13 @@ const navItems = [
   { href: '/admin', label: 'Painel Geral', icon: LayoutDashboard },
   { href: '/admin/demandas', label: 'Gestão de Demandas', icon: ClipboardList },
   { href: '/admin/setores', label: 'Secretarias e Órgãos', icon: Building2 },
-  { href: '/admin/usuarios', label: 'Servidores e Acessos', icon: Users },
   { href: '/admin/relatorios', label: 'Relatórios Analíticos', icon: BarChart3 },
-  { href: '/admin/configuracoes', label: 'Critérios e Parâmetros', icon: Settings },
 ];
 
 export default function AdminSidebar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
 
   // Trava a rolagem do body quando o menu mobile está aberto
   useEffect(() => {
@@ -46,7 +45,8 @@ export default function AdminSidebar() {
 
   // Fecha o menu mobile ao navegar
   useEffect(() => {
-    setMobileOpen(false);
+    const id = setTimeout(() => { setMobileOpen(false); }, 0);
+    return () => clearTimeout(id);
   }, [pathname]);
 
   const handleLogout = async () => {
@@ -87,9 +87,10 @@ export default function AdminSidebar() {
 
       {/* Sidebar Principal */}
       <aside
-        className={`sidebar fixed md:sticky top-0 z-50 md:z-30 h-dvh max-h-dvh flex flex-col transition-transform duration-250 ease-out ${
+        className={`sidebar fixed md:sticky top-0 z-50 md:z-30 h-dvh max-h-dvh flex flex-col transition-all duration-250 ease-out ${
           mobileOpen ? 'open translate-x-0' : '-translate-x-full md:translate-x-0'
-        }`}
+        } ${collapsed ? 'collapsed' : ''}`}
+        style={{ width: collapsed ? 72 : 260 }}
       >
         {/* Cabeçalho Institucional da Sidebar */}
         <div className="px-5 py-4 border-b border-slate-800/80 flex items-center justify-between">
@@ -113,6 +114,13 @@ export default function AdminSidebar() {
             aria-label="Fechar menu"
           >
             <X size={18} />
+          </button>
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className="hidden md:flex text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition-colors shrink-0"
+            aria-label={collapsed ? 'Expandir menu' : 'Recolher menu'}
+          >
+            {collapsed ? '»' : '«'}
           </button>
         </div>
 
@@ -147,7 +155,7 @@ export default function AdminSidebar() {
                 onClick={() => setMobileOpen(false)}
               >
                 <item.icon size={18} className={active ? 'text-white' : 'text-slate-400 group-hover:text-slate-300'} />
-                <span className="truncate">{item.label}</span>
+                <span className="truncate nav-label">{item.label}</span>
               </Link>
             );
           })}

@@ -38,7 +38,7 @@ export const STATUS_COLORS: Record<DemandaStatus, string> = {
   nova: 'bg-blue-100 text-blue-800',
   em_analise: 'bg-yellow-100 text-yellow-800',
   encaminhada: 'bg-purple-100 text-purple-800',
-  em_andamento: 'bg-orange-100 text-orange-800',
+  em_andamento: 'bg-blue-100 text-blue-800',
   concluida: 'bg-green-100 text-green-800',
   cancelada: 'bg-red-100 text-red-800',
 };
@@ -68,7 +68,7 @@ export const PRIORIDADE_LABELS: Record<PrioridadeFaixa, string> = {
 
 export const PRIORIDADE_COLORS: Record<PrioridadeFaixa, string> = {
   critica: 'bg-red-100 text-red-800 border-red-300',
-  alta: 'bg-orange-100 text-orange-800 border-orange-300',
+  alta: 'bg-blue-100 text-blue-800 border-blue-300',
   media: 'bg-yellow-100 text-yellow-800 border-yellow-300',
   baixa: 'bg-green-100 text-green-800 border-green-300',
 };

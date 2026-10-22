@@ -69,7 +69,8 @@ export default function RelatoriosPage() {
   const [dataHora, setDataHora] = useState('');
 
   useEffect(() => {
-    setDataHora(`${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`);
+    const id = setTimeout(() => { setDataHora(`${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`); }, 0);
+    return () => clearTimeout(id);
   }, []);
 
   const carregarDados = useCallback(async () => {
@@ -91,7 +92,8 @@ export default function RelatoriosPage() {
   }, []);
 
   useEffect(() => {
-    carregarDados();
+    const id = setTimeout(() => { carregarDados(); }, 0);
+    return () => clearTimeout(id);
   }, [carregarDados]);
 
   // Presets de data

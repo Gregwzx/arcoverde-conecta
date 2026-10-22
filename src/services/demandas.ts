@@ -5,11 +5,12 @@
 // Garante persistência real, segurança de dados do cidadão e integridade.
 
 import { createClient } from '@/lib/supabase/client';
-import type { Demanda, DemandaStatus, DemandaCategoria, Setor, Profile, HistoricoAlteracao } from '@/types';
+import type { Demanda, DemandaStatus, DemandaCategoria, Setor, Profile, HistoricoAlteracao, Anexo } from '@/types';
 import { calcularPrioridade } from '@/lib/priorizacao';
 import {
   MOCK_DEMANDAS,
   MOCK_SETORES,
+  MOCK_PROFILES,
   MOCK_CONFIGURACOES,
   type ConfiguracoesPrefeitura,
 } from './mockData';
@@ -35,6 +36,11 @@ export interface FiltrosDemanda {
 }
 
 export async function listarDemandas(filtros: FiltrosDemanda = {}) {
+  const demoAuth = typeof document !== 'undefined' && document.cookie.includes('ac_demo_auth=true');
+  if (demoAuth) {
+    return { demandas: MOCK_DEMANDAS as Demanda[], total: MOCK_DEMANDAS.length };
+  }
+  // original code below
   const { pagina = 1, por_pagina = 20 } = filtros;
   const offset = (pagina - 1) * por_pagina;
 
@@ -108,6 +114,13 @@ export interface DemandaPublicaDetalhe {
     valor_novo: string | null;
     created_at: string;
   }[];
+  anexos?: {
+    id: string;
+    nome_arquivo: string;
+    url: string;
+    tipo: string;
+    created_at: string;
+  }[];
 }
 
 export async function buscarPorProtocolo(protocolo: string): Promise<DemandaPublicaDetalhe | null> {
@@ -132,9 +145,16 @@ export async function buscarPorProtocolo(protocolo: string): Promise<DemandaPubl
     .eq('interno', false)
     .order('created_at', { ascending: true });
 
+  // Busca anexos e fotos públicas da ocorrência
+  const { data: anxData } = await supabase
+    .from('anexos')
+    .select('id, nome_arquivo, url, tipo, created_at')
+    .eq('demanda_id', data.id);
+
   return {
     ...data,
     historico: histData || [],
+    anexos: anxData || [],
   } as DemandaPublicaDetalhe;
 }
 
@@ -356,6 +376,55 @@ export async function adicionarComentario(
   }
 }
 
+// --- Anexos e Registros Fotográficos Comprobatórios ---
+
+export async function listarAnexos(demandaId: string): Promise<Anexo[]> {
+  try {
+    const { data, error } = await supabase
+      .from('anexos')
+      .select('*')
+      .eq('demanda_id', demandaId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.warn('Aviso ao consultar anexos no Supabase:', error.message);
+      return [];
+    }
+
+    return (data || []) as Anexo[];
+  } catch (err) {
+    console.warn('Erro ao listar anexos:', err);
+    return [];
+  }
+}
+
+export async function adicionarAnexo(input: {
+  demanda_id: string;
+  nome_arquivo: string;
+  url: string;
+  tipo: string;
+  tamanho?: number;
+}): Promise<Anexo> {
+  const { data, error } = await supabase
+    .from('anexos')
+    .insert({
+      demanda_id: input.demanda_id,
+      nome_arquivo: input.nome_arquivo.trim(),
+      url: input.url.trim(),
+      tipo: input.tipo,
+      tamanho: input.tamanho || 0,
+    })
+    .select()
+    .single();
+
+  if (error || !data) {
+    console.error('Erro ao salvar anexo no Supabase:', error);
+    throw error || new Error('Não foi possível salvar o anexo.');
+  }
+
+  return data as Anexo;
+}
+
 // --- Estatísticas Oficiais do Supabase ---
 
 export async function obterEstatisticas() {
@@ -431,6 +500,10 @@ export async function obterEstatisticas() {
 // --- Setores / Secretarias (CRUD) ---
 
 export async function listarSetores(): Promise<Setor[]> {
+  const demoAuth = typeof document !== 'undefined' && document.cookie.includes('ac_demo_auth=true');
+  if (demoAuth) {
+    return MOCK_SETORES as Setor[];
+  }
   const { data, error } = await supabase
     .from('setores')
     .select('*')
@@ -483,6 +556,14 @@ export async function atualizarSetor(
   return data as Setor;
 }
 
+export async function excluirDemanda(id: string): Promise<void> {
+  const { error } = await supabase.from('demandas').delete().eq('id', id);
+  if (error) {
+    console.error('Erro ao excluir demanda no Supabase:', error);
+    throw error;
+  }
+}
+
 export async function excluirSetor(id: string): Promise<void> {
   const { error } = await supabase.from('setores').delete().eq('id', id);
   if (error) {
@@ -494,13 +575,17 @@ export async function excluirSetor(id: string): Promise<void> {
 // --- Usuários e Perfis Institucionais (CRUD) ---
 
 export async function listarPerfis(): Promise<Profile[]> {
+  const demoAuth = typeof document !== 'undefined' && document.cookie.includes('ac_demo_auth=true');
+  if (demoAuth) {
+    return MOCK_PROFILES as Profile[];
+  }
   const { data, error } = await supabase
     .from('profiles')
-    .select('*, setor:setores(id, nome)')
+    .select('*, setor:setores!profiles_setor_id_fkey(id, nome)')
     .order('nome');
 
   if (error) {
-    console.error('Erro ao listar perfis no Supabase:', error);
+    console.error('Erro ao listar perfis no Supabase:', { message: error.message, code: error.code, details: error.details, hint: error.hint });
     throw error;
   }
 

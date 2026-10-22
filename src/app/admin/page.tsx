@@ -52,7 +52,8 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
-    carregarStats();
+    const id = setTimeout(() => { carregarStats(); }, 0);
+    return () => clearTimeout(id);
   }, []);
 
   const handlePovoarBanco = async () => {
@@ -208,22 +209,6 @@ export default function AdminDashboard() {
             <div>
               <p className="font-semibold text-slate-900 group-hover:text-blue-700 transition-colors">Relatórios e Impressão</p>
               <p className="text-[11px] text-slate-500">Exportação oficial da gestão</p>
-            </div>
-          </div>
-          <ArrowRight size={14} className="text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all" />
-        </Link>
-
-        <Link
-          href="/admin/configuracoes"
-          className="card py-3 px-4 flex items-center justify-between group hover:border-blue-300 hover:bg-blue-50/20 transition-all text-xs"
-        >
-          <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
-              <Settings size={16} />
-            </div>
-            <div>
-              <p className="font-semibold text-slate-900 group-hover:text-blue-700 transition-colors">Parâmetros de Pesos</p>
-              <p className="text-[11px] text-slate-500">Ajuste do algoritmo de prioridade</p>
             </div>
           </div>
           <ArrowRight size={14} className="text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all" />

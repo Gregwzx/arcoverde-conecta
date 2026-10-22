@@ -6,19 +6,20 @@ import {
   MapPin, Calendar, User, Building2, AlertTriangle, Clock,
   CheckCircle2, XCircle, MessageSquare, History, ArrowUpDown,
   Lightbulb, Construction, Trash2, Droplets, TreePine, X, Send,
-  ChevronDown, RefreshCw, Target, ClipboardList
+  ChevronDown, RefreshCw, Target, ClipboardList, Paperclip, Image as ImageIcon, ExternalLink
 } from 'lucide-react';
 import { PageHeader, Badge, EmptyState, StatCard, StatCardSkeleton, ConfirmDialog, CopyButton } from '@/components/ui/Shared';
 import { Modal } from '@/components/ui/Modal';
 import {
   listarDemandas, buscarDemanda, criarDemanda, atualizarDemanda, atualizarStatus,
-  listarHistorico, adicionarComentario, listarSetores, listarPerfis, listarBairros,
+  listarHistorico, adicionarComentario, listarAnexos, adicionarAnexo,
+  listarSetores, listarPerfis, listarBairros,
   type FiltrosDemanda, type NovaDemandaInput
 } from '@/services/demandas';
 import { calcularPrioridade } from '@/lib/priorizacao';
 import {
   STATUS_LABELS, STATUS_COLORS, CATEGORIA_LABELS, PRIORIDADE_LABELS, PRIORIDADE_COLORS,
-  type DemandaStatus, type DemandaCategoria, type PrioridadeFaixa, type Demanda, type Setor, type Profile, type HistoricoAlteracao
+  type DemandaStatus, type DemandaCategoria, type PrioridadeFaixa, type Demanda, type Setor, type Profile, type HistoricoAlteracao, type Anexo
 } from '@/types';
 
 const CATEGORIA_ICON_MAP: Record<string, React.ElementType> = {
@@ -50,7 +51,12 @@ export default function DemandasPage() {
   const [modalEditar, setModalEditar] = useState(false);
   const [demandaSelecionada, setDemandaSelecionada] = useState<Demanda | null>(null);
   const [historico, setHistorico] = useState<HistoricoAlteracao[]>([]);
-  const [tabDetalhe, setTabDetalhe] = useState<'info' | 'historico' | 'prioridade'>('info');
+  const [anexos, setAnexos] = useState<Anexo[]>([]);
+  const [tabDetalhe, setTabDetalhe] = useState<'info' | 'historico' | 'prioridade' | 'anexos'>('info');
+  const [novoAnexoNome, setNovoAnexoNome] = useState('');
+  const [novoAnexoUrl, setNovoAnexoUrl] = useState('');
+  const [novoAnexoTipo, setNovoAnexoTipo] = useState('image/jpeg');
+  const [salvandoAnexo, setSalvandoAnexo] = useState(false);
 
   // Formulários
   const [formNova, setFormNova] = useState<NovaDemandaInput>({
@@ -73,7 +79,7 @@ export default function DemandasPage() {
       const [result, setoresData, perfisData, bairrosData] = await Promise.all([
         listarDemandas({ ...filtros, busca }),
         listarSetores(),
-        listarPerfis(),
+        listarPerfis().catch(() => []),
         listarBairros(),
       ]);
       setDemandas(result.demandas);
@@ -88,7 +94,10 @@ export default function DemandasPage() {
     }
   }, [filtros, busca]);
 
-  useEffect(() => { carregarDados(); }, [carregarDados]);
+  useEffect(() => {
+    const id = setTimeout(() => { carregarDados(); }, 0);
+    return () => clearTimeout(id);
+  }, [carregarDados]);
 
   const totalPaginas = Math.ceil(total / (filtros.por_pagina || 15)) || 1;
 
@@ -96,11 +105,38 @@ export default function DemandasPage() {
     setDemandaSelecionada(demanda);
     setTabDetalhe('info');
     setModalDetalhe(true);
+    setNovoAnexoNome('');
+    setNovoAnexoUrl('');
     try {
-      const hist = await listarHistorico(demanda.id);
+      const [hist, anx] = await Promise.all([
+        listarHistorico(demanda.id),
+        listarAnexos(demanda.id),
+      ]);
       setHistorico(hist);
+      setAnexos(anx);
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleAdicionarAnexo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!demandaSelecionada || !novoAnexoNome.trim() || !novoAnexoUrl.trim()) return;
+    setSalvandoAnexo(true);
+    try {
+      const anx = await adicionarAnexo({
+        demanda_id: demandaSelecionada.id,
+        nome_arquivo: novoAnexoNome.trim(),
+        url: novoAnexoUrl.trim(),
+        tipo: novoAnexoTipo,
+      });
+      setAnexos((prev) => [anx, ...prev]);
+      setNovoAnexoNome('');
+      setNovoAnexoUrl('');
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSalvandoAnexo(false);
     }
   };
 
@@ -646,6 +682,7 @@ export default function DemandasPage() {
                 { key: 'info', label: 'Visão Geral & Despachos', icon: Eye },
                 { key: 'historico', label: 'Tramitação & Histórico', icon: History },
                 { key: 'prioridade', label: 'Cálculo da Prioridade', icon: Target },
+                { key: 'anexos', label: `Fotos & Anexos (${anexos.length})`, icon: Paperclip },
               ].map(({ key, label, icon: Icon }) => (
                 <button
                   key={key}
@@ -809,7 +846,8 @@ export default function DemandasPage() {
                 </div>
 
                 {(() => {
-                  const diasAberto = Math.floor((Date.now() - new Date(demandaSelecionada.created_at).getTime()) / (1000 * 60 * 60 * 24));
+                   // eslint-disable-next-line react-hooks/purity
+                   const diasAberto = Math.floor((Date.now() - new Date(demandaSelecionada.created_at).getTime()) / (1000 * 60 * 60 * 24));
                   const resultado = calcularPrioridade({
                     risco_seguranca: demandaSelecionada.risco_seguranca,
                     impacto_populacao: demandaSelecionada.impacto_populacao,
@@ -841,6 +879,80 @@ export default function DemandasPage() {
                     </div>
                   );
                 })()}
+              </div>
+            )}
+
+            {/* Tab: Anexos e Fotos */}
+            {tabDetalhe === 'anexos' && (
+              <div className="space-y-4 animate-fade-in text-xs">
+                {anexos.length === 0 ? (
+                  <div className="p-6 text-center bg-slate-50 border border-slate-200 rounded-xl text-slate-500 space-y-1">
+                    <ImageIcon size={24} className="mx-auto text-slate-400 mb-1" />
+                    <p className="font-semibold text-slate-700">Nenhum anexo ou foto vinculada</p>
+                    <p className="text-[11px] text-slate-400">Adicione registros fotográficos ou comprovantes operacionais desta demanda abaixo.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-72 overflow-y-auto pr-1">
+                    {anexos.map((anx) => (
+                      <div key={anx.id} className="p-3 bg-white border border-slate-200 rounded-xl flex items-start gap-3 hover:border-blue-300 transition-colors">
+                        <div className="h-10 w-10 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+                          {anx.tipo.startsWith('image/') ? <ImageIcon size={18} /> : <Paperclip size={18} />}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-slate-900 truncate" title={anx.nome_arquivo}>{anx.nome_arquivo}</p>
+                          <p className="text-[10px] text-slate-400 mt-0.5">
+                            {new Date(anx.created_at).toLocaleDateString('pt-BR')} {anx.tamanho ? `• ${(anx.tamanho / 1024).toFixed(0)} KB` : ''}
+                          </p>
+                          <a
+                            href={anx.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:text-blue-800 font-medium mt-1.5"
+                          >
+                            <span>Abrir arquivo</span>
+                            <ExternalLink size={11} />
+                          </a>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Formulário para Anexar Novo Documento/Foto */}
+                <form onSubmit={handleAdicionarAnexo} className="border-t border-slate-200 pt-3.5 space-y-3">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">
+                    Adicionar Registro Fotográfico ou Comprovante
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block text-[11px] font-medium text-slate-600 mb-1">Nome/Descrição da Foto ou Anexo *</label>
+                      <input
+                        className="input text-xs"
+                        placeholder="Ex.: Foto da lâmpada substituída em campo"
+                        value={novoAnexoNome}
+                        onChange={(e) => setNovoAnexoNome(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-medium text-slate-600 mb-1">URL da Imagem / Arquivo Comprobatório *</label>
+                      <input
+                        className="input text-xs"
+                        type="url"
+                        placeholder="https://exemplo.com/foto_conclusao.jpg"
+                        value={novoAnexoUrl}
+                        onChange={(e) => setNovoAnexoUrl(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between pt-1">
+                    <span className="text-[11px] text-slate-400">O registro será vinculado permanentemente ao protocolo {demandaSelecionada.protocolo}.</span>
+                    <button type="submit" className="btn btn-primary btn-sm text-xs gap-1.5" disabled={salvandoAnexo || !novoAnexoNome.trim() || !novoAnexoUrl.trim()}>
+                      <Paperclip size={13} /> {salvandoAnexo ? 'Salvando...' : 'Vincular à Demanda'}
+                    </button>
+                  </div>
+                </form>
               </div>
             )}
           </div>
